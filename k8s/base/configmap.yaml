@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+  namespace: rahbar
+data:
+  CHUNK_SIZE: "300"
+  CHUNK_OVERLAP: "50"
+  TOP_K: "5"
+  RELEVANCE_FLOOR: "0.35"
+  CACHE_THRESHOLD: "0.92"
+  TEMPERATURE: "0.1"
+  EMBED_MODEL: "dummy-768"
+  RETRIEVER: "stub"
+  LLM_PROVIDER: "stub"
+  LLM_MODEL: "llama3.2:3b"
+  OLLAMA_URL: "http://host.minikube.internal:11434"
+  CHROMA_HOST: "chroma"
+  CHROMA_PORT: "8000"
+  CHROMA_COLLECTION: "rahbar"
+  REDIS_HOST: "redis"
