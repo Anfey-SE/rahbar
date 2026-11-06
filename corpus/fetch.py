@@ -5,11 +5,16 @@
     python corpus/fetch.py --force               # download everything again
     python corpus/fetch.py --verify              # re-hash local files against MANIFEST.md
     python corpus/fetch.py --list URL            # list the documents linked from an index page
+    python corpus/fetch.py --out /corpus         # write everything to /corpus (also: CORPUS_DIR env var)
 
 Writes:
     corpus/raw/<file>         the documents (gitignored: never commit someone else's PDFs)
     corpus/raw/_index.json    file -> doc_version, superseded; the indexer reads this
     corpus/MANIFEST.md        URL, size and SHA-256 per document (commit this)
+
+With --out DIR (or CORPUS_DIR set), the documents, _index.json and MANIFEST.md all go
+into DIR and nothing else on the filesystem is written. This is how the cluster runs it
+(read-only root filesystem, one writable emptyDir).
 
 Rules this script follows so 40 teams do not hammer one university website:
 one request at a time, a pause between requests, a clear User-Agent, each file
@@ -21,6 +26,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import time
@@ -94,7 +100,7 @@ def load_sources() -> list[dict]:
 
 def fetch(force: bool) -> int:
     docs = load_sources()
-    RAW.mkdir(exist_ok=True)
+    RAW.mkdir(parents=True, exist_ok=True)
     index_path = RAW / "_index.json"
     previous = {e["name"]: e for e in json.loads(index_path.read_text())} \
         if index_path.exists() else {}
@@ -229,7 +235,14 @@ def main() -> int:
     group.add_argument("--force", action="store_true", help="download everything again")
     group.add_argument("--verify", action="store_true", help="check local files against MANIFEST.md")
     group.add_argument("--list", metavar="URL", help="list document links on an index page")
+    parser.add_argument("--out", metavar="DIR", default=os.environ.get("CORPUS_DIR"),
+                        help="directory for documents, _index.json and MANIFEST.md "
+                             "(default: corpus/raw, with MANIFEST.md in corpus/)")
     args = parser.parse_args()
+    if args.out:
+        global RAW, MANIFEST
+        RAW = Path(args.out)
+        MANIFEST = RAW / "MANIFEST.md"
     if args.verify:
         return verify()
     if args.list:
