@@ -17,6 +17,7 @@ spec:
         spec:
           restartPolicy: OnFailure
           serviceAccountName: indexer-sa
+          enableServiceLinks: false
           securityContext:
             runAsNonRoot: true
             runAsUser: 10001

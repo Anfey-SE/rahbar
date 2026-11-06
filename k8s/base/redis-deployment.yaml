@@ -18,6 +18,7 @@ spec:
         app.kubernetes.io/name: redis
     spec:
       serviceAccountName: redis-sa
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true

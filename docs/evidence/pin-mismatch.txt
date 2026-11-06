@@ -1,0 +1,122 @@
+RAHBAR – Embedding-Pin Mismatch Evidence
+Generated: 2026-11-06
+Step: api/readyz + embedding-pin guard (Section 4.4)
+=========================================================
+
+══════════════════════════════════════════════════════════
+STEP 1 — Healthy state: EMBED_MODEL=dummy-768 (matches index)
+══════════════════════════════════════════════════════════
+
+$ kubectl get pods -n rahbar
+NAME                     READY   STATUS      RESTARTS   AGE
+api-76db8c4f8b-lnn5j     1/1     Running     0          37s
+api-76db8c4f8b-mjfrz     1/1     Running     0          30s
+api-76db8c4f8b-q5h4b     1/1     Running     0          24s
+chroma-0                 1/1     Running     0          12h
+indexer-stplj            0/1     Completed   0          12h
+redis-7766988887-xcs76   1/1     Running     0          76s
+ui-5688c6ccc8-rpwrm      1/1     Running     0          82s
+
+$ kubectl exec api-76db8c4f8b-lnn5j -n rahbar -- env | grep EMBED_MODEL
+EMBED_MODEL=dummy-768
+
+$ curl -si http://localhost:18000/readyz      # via kubectl port-forward
+HTTP/1.1 200 OK
+date: Fri, 06 Nov 2026 12:23:42 GMT
+server: uvicorn
+content-length: 110
+content-type: application/json
+x-request-id: b66f4d64225141b78cbf76002f897597
+
+{"status":"ready","checks":{"chroma":"ok","collection":"ok","count":3,"embed_model":"dummy-768","redis":"ok"}}
+
+$ curl -si http://localhost:18000/healthz
+HTTP/1.1 200 OK
+date: Fri, 06 Nov 2026 12:23:42 GMT
+server: uvicorn
+content-length: 18
+content-type: application/json
+x-request-id: 68a7a650961b44649552056e75e63fce
+
+{"status":"alive"}
+
+══════════════════════════════════════════════════════════
+STEP 2 — Mismatch: ConfigMap EMBED_MODEL changed to nomic-embed-text
+         (index still contains dummy-768 — no re-index done)
+══════════════════════════════════════════════════════════
+
+$ kubectl patch configmap rahbar-config -n rahbar \
+    --type=merge --patch '{"data":{"EMBED_MODEL":"nomic-embed-text"}}'
+configmap/rahbar-config patched
+
+$ kubectl rollout restart deployment/api -n rahbar
+deployment.apps/api restarted
+
+$ kubectl get pods -n rahbar     # new pod 0/1 — readyz fails
+NAME                     READY   STATUS      RESTARTS   AGE
+api-64c844b685-6k5bb     0/1     Running     0          2m1s
+api-76db8c4f8b-lnn5j     1/1     Running     0          4m41s
+api-76db8c4f8b-mjfrz     1/1     Running     0          4m34s
+api-76db8c4f8b-q5h4b     1/1     Running     0          4m28s
+chroma-0                 1/1     Running     0          12h
+indexer-stplj            0/1     Completed   0          12h
+redis-7766988887-xcs76   1/1     Running     0          5m20s
+ui-5688c6ccc8-rpwrm      1/1     Running     0          5m26s
+
+$ kubectl logs api-64c844b685-6k5bb -n rahbar | grep mismatch | head -2
+{"ts": "2026-11-06T12:24:10Z", "level": "ERROR", "logger": "rahbar.api", "msg": "embedding model mismatch", "request_id": "-", "expected": "nomic-embed-text", "found": "dummy-768"}
+{"ts": "2026-11-06T12:24:11Z", "level": "ERROR", "logger": "rahbar.health", "msg": "embedding model mismatch", "request_id": "84dbcc044388495b87f33b9d00d59a8d", "expected": "nomic-embed-text", "found": "dummy-768"}
+
+$ curl -si http://localhost:18001/readyz   # via port-forward to unready pod
+HTTP/1.1 503 Service Unavailable
+date: Fri, 06 Nov 2026 12:26:24 GMT
+server: uvicorn
+content-length: 196
+content-type: application/json
+x-request-id: 41d2c4c637ba48a0ae3b1db7182bf2a4
+
+{"status":"not_ready","failing_dependency":"embed_model","detail":"Collection embed_model 'dummy-768' does not match expected 'nomic-embed-text'","expected":"nomic-embed-text","found":"dummy-768"}
+
+══════════════════════════════════════════════════════════
+STEP 3 — Recovery: revert EMBED_MODEL=dummy-768
+══════════════════════════════════════════════════════════
+
+$ kubectl patch configmap rahbar-config -n rahbar \
+    --type=merge --patch '{"data":{"EMBED_MODEL":"dummy-768"}}'
+configmap/rahbar-config patched
+
+$ kubectl rollout restart deployment/api -n rahbar
+deployment.apps/api restarted
+
+$ kubectl rollout status deployment/api -n rahbar
+deployment "api" successfully rolled out
+
+$ kubectl get pods -n rahbar
+NAME                     READY   STATUS      RESTARTS   AGE
+api-8464c67494-26fsl     1/1     Running     0          30s
+api-8464c67494-7db9h     1/1     Running     0          21s
+api-8464c67494-nk7kw     1/1     Running     0          38s
+chroma-0                 1/1     Running     0          12h
+indexer-stplj            0/1     Completed   0          12h
+redis-7766988887-xcs76   1/1     Running     0          6m30s
+ui-5688c6ccc8-rpwrm      1/1     Running     0          6m36s
+
+$ curl -si http://localhost:18002/readyz   # via port-forward — recovered
+HTTP/1.1 200 OK
+date: Fri, 06 Nov 2026 12:27:20 GMT
+server: uvicorn
+content-length: 110
+content-type: application/json
+x-request-id: 111aefa767f342da975806a7f0140947
+
+{"status":"ready","checks":{"chroma":"ok","collection":"ok","count":3,"embed_model":"dummy-768","redis":"ok"}}
+
+══════════════════════════════════════════════════════════
+SUMMARY
+══════════════════════════════════════════════════════════
+- /healthz: always 200 {"status":"alive"} — no dependency checks
+- /readyz: 200 when Chroma reachable + collection non-empty + embed_model matches + Redis reachable
+- /readyz: 503 {"status":"not_ready","failing_dependency":"embed_model",...} on model mismatch
+- Startup check: lifespan calls check_embedding_pin() — logs JSON ERROR on mismatch
+- Readiness probe on /readyz prevents mismatched pods from ever receiving traffic
+- Rolling update strategy (maxUnavailable=0) keeps old pods serving while new ones fail readyz

@@ -12,7 +12,18 @@ from dataclasses import dataclass, field
 
 
 def _int(name: str, default: int) -> int:
-    return int(os.environ.get(name, default))
+    """Parse an integer env-var.
+
+    Kubernetes service-link variables may look like ``tcp://10.x.x.x:6379``.
+    We strip the protocol prefix so the parsed value is always a plain port
+    number.  ``enableServiceLinks: false`` is the primary defence; this is a
+    belt-and-suspenders fallback.
+    """
+    raw = os.environ.get(name, str(default))
+    # K8s service-link: "tcp://10.0.0.1:PORT" – take the last colon-segment
+    if raw.startswith(("tcp://", "udp://")):
+        raw = raw.rsplit(":", 1)[-1]
+    return int(raw)
 
 
 def _float(name: str, default: float) -> float:
@@ -33,6 +44,10 @@ class Settings:
     chroma_port: int = 8000
     collection: str = "rahbar"
 
+    # Cache store
+    redis_host: str = "redis"
+    redis_port: int = 6379
+
     # Retrieval and generation
     top_k: int = 5
     temperature: float = 0.2
@@ -52,6 +67,8 @@ def get_settings() -> Settings:
         chroma_host=os.environ.get("CHROMA_HOST", "chroma"),
         chroma_port=_int("CHROMA_PORT", 8000),
         collection=os.environ.get("CHROMA_COLLECTION", "rahbar"),
+        redis_host=os.environ.get("REDIS_HOST", "redis"),
+        redis_port=_int("REDIS_PORT", 6379),
         top_k=_int("TOP_K", 5),
         temperature=_float("TEMPERATURE", 0.2),
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),

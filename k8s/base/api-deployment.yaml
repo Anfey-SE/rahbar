@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: api
     spec:
       serviceAccountName: api-sa
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true

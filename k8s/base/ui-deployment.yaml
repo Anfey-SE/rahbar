@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: ui
     spec:
       serviceAccountName: ui-sa
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
