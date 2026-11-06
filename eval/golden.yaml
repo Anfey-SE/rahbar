@@ -78,7 +78,7 @@
 
   - id: q12
     type: exact
-    question: What is the maximum number of credit hours a student can register for in one semester?
+    question: What does clause 4.3 of the academic rules say about course registration?
     relevant:
       - {source: academic-rules-handbook-jun-2026.pdf, section: "4.3"}
     expect: "additional course"
