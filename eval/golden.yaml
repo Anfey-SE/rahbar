@@ -77,10 +77,10 @@
 
   - id: q12
     type: exact
-    question: What does clause 4.3 of the academic rules say about course registration?
+    question: According to clause 1.23, what is the maximum time limit to complete a Bachelor's degree?
     relevant:
-      - {source: academic-rules-handbook-jun-2026.pdf, section: "4.3"}
-    expect: "additional course"
+      - {source: academic-rules-handbook-jun-2026.pdf, section: "1.23"}
+    expect: "6 years"
 
   - id: q13
     type: abstain
@@ -100,4 +100,5 @@
     relevant:
       - {source: academic-rules-handbook-jun-2026.pdf, section: "1.21"}
     expect: "100%"
+
 
