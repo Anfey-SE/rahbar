@@ -74,13 +74,27 @@ def run_pipeline(settings: IndexerSettings) -> int:
     if not documents:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
     all_chunks: list[Chunk] = []
+
+    t_extract_start = time.perf_counter()
     for path, doc_version, superseded in documents:
         doc = clean(extract(str(path), doc_version, superseded))
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         log("chunked", source=path.name, chunks=len(pieces))
         all_chunks.extend(pieces)
+    t_extract_sec = round(time.perf_counter() - t_extract_start, 2)
+    log("extraction and chunking completed", total_chunks=len(all_chunks), seconds=t_extract_sec)
+
+    t_embed_start = time.perf_counter()
     vectors = embed([c.text for c in all_chunks], settings)
-    return store(all_chunks, vectors, settings)
+    t_embed_sec = round(time.perf_counter() - t_embed_start, 2)
+    log("embedding completed", count=len(vectors), seconds=t_embed_sec)
+
+    t_store_start = time.perf_counter()
+    stored_count = store(all_chunks, vectors, settings)
+    t_store_sec = round(time.perf_counter() - t_store_start, 2)
+    log("storing completed", count=stored_count, seconds=t_store_sec)
+
+    return stored_count
 
 
 def main() -> int:
