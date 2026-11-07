@@ -29,11 +29,10 @@
 
   - id: q05
     type: ordinary
-    question: What are the rules for withdrawing from a course?
+    question: What is the minimum CGPA required to graduate with a Bachelor's degree?
     relevant:
-      - {source: academic-rules-handbook-jun-2026.pdf, section: "4.25"}
-    expect: "makeup week"
-
+      - {source: academic-rules-handbook-jun-2026.pdf, section: "1.25"}
+    expect: "2.00"
   - id: q06
     type: ordinary
     question: What does the Generative AI policy allow and forbid students to do?
@@ -101,3 +100,4 @@
     relevant:
       - {source: academic-rules-handbook-jun-2026.pdf, section: "1.21"}
     expect: "100%"
+
