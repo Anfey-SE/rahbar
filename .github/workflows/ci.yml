@@ -1,77 +1,86 @@
 name: CI
-
 on:
   push:
-    branches: [dev, main]
+    branches: [dev]
   pull_request:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r api/requirements.txt -r indexer/requirements.txt ruff mypy pytest pyyaml
+      - run: ruff check api indexer eval corpus
+      - run: cd api && mypy app
+      - run: cd indexer && mypy pipeline
   test:
     name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install \
-            fastapi uvicorn pydantic httpx chromadb-client redis \
-            pytest pytest-asyncio ruff mypy \
-            pyyaml pdfplumber
-
-      - name: Lint (ruff)
-        run: ruff check api indexer eval corpus
-
-      - name: Type-check (mypy)
-        run: |
-          cd api && mypy app
-          cd ../indexer && mypy pipeline
-
-      - name: Unit tests
-        run: |
-          cd api && python -m pytest -q
-          cd ../indexer && python -m pytest -q
-
-  validate-manifests:
-    name: validate-manifests
+        with: { python-version: "3.12" }
+      - run: pip install -r api/requirements.txt -r indexer/requirements.txt pytest pytest-cov pytest-asyncio pyyaml
+      - run: cd api && python -m pytest -q --cov=app --cov-report=term --cov-fail-under=60
+      - run: cd indexer && python -m pytest -q
+  manifests:
+    name: manifests
     runs-on: ubuntu-latest
-    needs: [test]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install kubeconform
-        run: |
-          curl -sSL \
-            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
-            | tar xz -C /usr/local/bin
-          kubeconform -v
-
-      - name: Validate base manifests
-        run: |
-          kubeconform -strict -ignore-missing-schemas -summary \
-            k8s/base/*.yaml k8s/overlays/dev/*.yaml k8s/overlays/prod/*.yaml
-
+      - run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | sudo tar xz -C /usr/local/bin kubeconform
+          kubectl kustomize k8s/overlays/prod | kubeconform -strict -ignore-missing-schemas -summary
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build -t rahbar-api:ci api
+          docker build -t rahbar-indexer:ci indexer
+          docker build -t rahbar-ui:ci ui
   scan:
     name: scan
     runs-on: ubuntu-latest
-    needs: [test]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+      - uses: aquasecurity/trivy-action@0.28.0
         with:
-          scan-type: filesystem
+          scan-type: fs
           scan-ref: .
           severity: CRITICAL,HIGH
-          exit-code: "0"
+          ignore-unfixed: true
+          exit-code: "1"
           format: table
+  e2e-eval:
+    name: e2e-eval
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+        with: { cluster_name: rahbar }
+      - name: Build and load images
+        run: |
+          docker build -t rahbar-api:dev api
+          docker build -t rahbar-indexer:dev indexer
+          docker build -t rahbar-ui:dev ui
+          for i in rahbar-api rahbar-indexer rahbar-ui; do kind load docker-image $i:dev --name rahbar; done
+      - name: Deploy and index
+        run: |
+          kubectl apply -k k8s/overlays/dev
+          kubectl rollout status statefulset/chroma -n rahbar --timeout=240s
+          kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=300s
+          kubectl rollout status deployment/api -n rahbar --timeout=240s
+      - name: Smoke test
+        run: |
+          kubectl port-forward -n rahbar svc/api 8000:8000 &
+          sleep 5
+          curl -fsS localhost:8000/readyz
+          curl -fsS -X POST localhost:8000/api/ask -H 'Content-Type: application/json' -d '{"question":"What is the attendance policy?"}'
