@@ -1,0 +1,17 @@
+$ kubectl get networkpolicy -n rahbar
+NAME               POD-SELECTOR                     AGE
+allow-dns          <none>                           18m
+api-egress         app.kubernetes.io/name=api       14m
+api-ingress        app.kubernetes.io/name=api       18m
+chroma-ingress     app.kubernetes.io/name=chroma    18m
+default-deny-all   <none>                           18m
+indexer-egress     app.kubernetes.io/name=indexer   14m
+redis-ingress      app.kubernetes.io/name=redis     18m
+ui-ingress         app.kubernetes.io/name=ui        18m
+
+$ ui -> chroma (expected: blocked)
+wget: download timed out
+command terminated with exit code 1
+
+$ api -> chroma (expected: allowed)
+b'{"nanosecond heartbeat":1794057507598485753}'

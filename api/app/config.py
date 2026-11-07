@@ -47,6 +47,8 @@ class Settings:
     # Cache store
     redis_host: str = "redis"
     redis_port: int = 6379
+    cache_threshold: float = 0.92
+    relevance_floor: float = 0.35
 
     # Retrieval and generation
     top_k: int = 5
@@ -69,6 +71,8 @@ def get_settings() -> Settings:
         collection=os.environ.get("CHROMA_COLLECTION", "rahbar"),
         redis_host=os.environ.get("REDIS_HOST", "redis"),
         redis_port=_int("REDIS_PORT", 6379),
+        cache_threshold=_float("CACHE_THRESHOLD", 0.92),
+        relevance_floor=_float("RELEVANCE_FLOOR", 0.35),
         top_k=_int("TOP_K", 5),
         temperature=_float("TEMPERATURE", 0.2),
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
