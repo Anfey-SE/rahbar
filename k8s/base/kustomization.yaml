@@ -19,3 +19,5 @@ resources:
   - indexer-job.yaml
   - indexer-cronjob.yaml
   - ingress.yaml
+  - hpa.yaml
+  - networkpolicy.yaml

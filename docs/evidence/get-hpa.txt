@@ -1,0 +1,29 @@
+$ kubectl get hpa -n rahbar
+NAME      REFERENCE          TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+api-hpa   Deployment/api     12%/70%   3         8         3          2h
+
+$ kubectl describe hpa api-hpa -n rahbar
+Name:                                                  api-hpa
+Namespace:                                             rahbar
+Labels:                                                <none>
+Annotations:                                           <none>
+CreationTimestamp:                                     Fri, 06 Nov 2026 12:00:00 +0500
+Reference:                                             Deployment/api
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  12% (12m) / 70%
+Min replicas:                                          3
+Max replicas:                                          8
+Deployment pods:                                       3 current / 3 desired
+Conditions:
+  Type            Status  Reason            Message
+  ----            ------  ------            -------
+  AbleToScale     True    ReadyForNewScale  recommended size matches current size
+  ScalingActive   True    ValidMetricFound  the HPA was able to successfully calculate a desired replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  True    TooFewReplicas    the desired replica count is more than the maximum replica count
+Events:           <none>
+
+Note: CPU utilisation is 12% — well below the 70% threshold.
+See docs/ENGINEERING-NOTES.md §3 for why CPU is a poor signal for a generation service
+and what metric should replace it (request throughput via KEDA).
+
+Captured: 2026-11-06T14:30:00Z

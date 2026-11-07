@@ -1,0 +1,125 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install fastapi uvicorn pydantic httpx chromadb-client redis pytest ruff mypy pyyaml
+
+      - name: Lint
+        run: ruff check api indexer eval
+
+      - name: Test
+        run: |
+          cd api && python -m pytest -q
+          cd ../indexer && python -m pytest -q
+
+  build-and-push:
+    name: build-and-push
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push rahbar-api
+        uses: docker/build-push-action@v6
+        with:
+          context: api
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-api:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-api:latest
+
+      - name: Build and push rahbar-indexer
+        uses: docker/build-push-action@v6
+        with:
+          context: indexer
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-indexer:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-indexer:latest
+
+      - name: Build and push rahbar-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: ui
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-ui:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-ui:latest
+
+  e2e-eval:
+    name: e2e-eval
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: pip install httpx pyyaml fastapi uvicorn chromadb-client redis pydantic
+
+      - name: Start kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: rahbar-ci
+
+      - name: Deploy to kind
+        run: |
+          kubectl apply -k k8s/overlays/dev || true
+          kubectl wait --for=condition=available deployment/ui -n rahbar --timeout=120s || true
+
+      - name: Run indexer Job
+        run: |
+          kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=180s || true
+
+      - name: Run eval gate (fixtures corpus)
+        run: |
+          API_URL=$(kubectl get service api -n rahbar \
+            -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "localhost")
+          python eval/run_eval.py \
+            --api "http://${API_URL}:8000" \
+            --golden eval/fixtures/golden.fixture.yaml \
+            || exit $?
+
+  deploy:
+    name: deploy
+    needs: [build-and-push, e2e-eval]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy (kubectl apply)
+        run: |
+          echo "In production, configure KUBECONFIG from secrets.KUBECONFIG"
+          echo "kubectl apply -k k8s/overlays/prod"
+          echo "kubectl rollout status deployment/api -n rahbar"
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
