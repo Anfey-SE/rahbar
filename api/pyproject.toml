@@ -10,3 +10,6 @@ target-version = "py312"
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
