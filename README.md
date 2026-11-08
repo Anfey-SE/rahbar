@@ -115,3 +115,28 @@ All settings come from the ConfigMap `rahbar-config` in namespace `rahbar`. Key 
 
 - **Member 1** — Platform & DevOps (Dockerfiles, Kubernetes, CI/CD, /readyz, embedding pin)
 - **Member 2** — RAG pipeline (retriever, providers, eval, corpus)
+
+## Deploy: exact apply order (from a clean clone)
+
+1. Start the cluster (Calico is required for NetworkPolicy):
+   minikube start --driver=docker --cni=calico --memory=4096 --cpus=4
+   minikube addons enable metrics-server
+   minikube addons enable ingress
+2. Build the images and load them into minikube:
+   docker build -t rahbar-api:dev api
+   docker build -t rahbar-indexer:dev indexer
+   docker build -t rahbar-ui:dev ui
+   for i in rahbar-api rahbar-indexer rahbar-ui; do minikube image load $i:dev; done
+3. Apply everything:
+   kubectl apply -k k8s/overlays/dev
+4. Wait for the indexer Job and the API:
+   kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=300s
+   kubectl rollout status deployment/api -n rahbar
+5. Ask a question:
+   kubectl port-forward -n rahbar svc/api 8000:8000
+   curl -X POST localhost:8000/api/ask -H 'Content-Type: application/json' -d '{"question":"What is the attendance policy?"}'
+6. Re-index without a redeploy:
+   kubectl create job --from=cronjob/reindex manual-reindex-1 -n rahbar
+7. Hosted LLM only: export LLM_API_KEY=... && kubectl create secret generic rahbar-secret -n rahbar --from-literal=LLM_API_KEY="$LLM_API_KEY"
+
+The committed ConfigMap runs the stub retriever and dummy index so the stack comes up with no model.
