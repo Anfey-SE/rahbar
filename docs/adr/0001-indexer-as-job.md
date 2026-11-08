@@ -1,19 +1,20 @@
-# ADR 0001 — Indexer runs as a Kubernetes Job, not in API startup
+# ADR 0001: The indexer runs as a Kubernetes Job, not at API startup
 
-**Date:** 2026-11-01
-**Status:** Accepted
-**Deciders:** Member 1 (Platform), Member 2 (RAG)
+Status: accepted
 
 ## Context
-
-The API has 3 replicas sharing one Chroma StatefulSet backed by a single PVC. If the indexer ran at API startup, 3 pods would call `collection.add()` simultaneously on every restart — pod eviction, rolling update, or crash. Chroma's HNSW index is not safe for concurrent writers; the result is data corruption, duplicate IDs, or a deadlock. Additionally, a re-index on every restart imposes an unacceptable cold-start penalty.
+The API runs as 3 replicas against one Chroma volume. The corpus has to be extracted, OCR'd, chunked and embedded before any question can be answered.
 
 ## Decision
+Indexing runs as a one-shot `Job` (`k8s/base/indexer-job.yaml`) and a weekly `CronJob` (`reindex-cronjob.yaml`) with the same image and arguments. The API only reads. The `chroma` StatefulSet is the only store, and the Job is the only writer.
 
-The indexer is a separate Kubernetes **Job** (`k8s/base/indexer-job.yaml`) with `restartPolicy: OnFailure` and `backoffLimit: 3`. The API image has no indexing code at all. A weekly **CronJob** (`k8s/base/indexer-cronjob.yaml`) handles scheduled re-indexing. The store stage atomically replaces the collection (delete-then-create) so the API continues reading the old collection until the new one is fully written.
+## Why not index at API startup
+1. Three replicas would write one volume at once and could leave an index no document produced.
+2. Every restart, rolling update or OOM kill would pay the full embedding cost again.
+3. Readiness would be meaningless: a pod is either ready before the index exists or takes minutes and gets killed by its probes.
+4. Re-indexing would need a redeploy.
 
 ## Consequences
-
-- **Good:** No write races; the Job's exit code gates success; CronJob handles scheduled re-index; the API is provably read-only.
-- **Bad:** After a fresh `kubectl apply`, the first `/readyz` returns 503 until the Job completes (~2 min with the dummy index). Operators must `kubectl wait --for=condition=complete job/indexer -n rahbar`.
-- **Implementation:** `k8s/base/indexer-job.yaml` with args `["python", "-m", "pipeline.run", "--dummy"]` for week-1 CI; real pipeline uses the same image without `--dummy`.
+- `/readyz` returns 503 until the collection exists and is non-empty, so pods without an index stay out of the Service.
+- A re-index is one command with no downtime: `kubectl create job --from=cronjob/reindex manual-reindex-1 -n rahbar`.
+- The `reindex` CronJob has been seen firing on its own and completing in the cluster.
