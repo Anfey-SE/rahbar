@@ -14,3 +14,4 @@ ignore_missing_imports = true
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B"]
 ignore = ["E501", "B905"]
+ignore = ["E501", "B905"]
