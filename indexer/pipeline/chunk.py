@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import re
 from typing import NamedTuple
 
@@ -25,8 +26,27 @@ _BOILERPLATE_PHRASES = [
     "fast nuces",
     "table of contents",
     "undergraduate academic rules and regulations",
+    "academic rules and regulations",
     "student handbook",
 ]
+
+_TITLE_KEYWORDS = [
+    "academic", "course", "degree", "warning", "attendance", "probation",
+    "repeat", "withdraw", "fee", "generative ai", "conduct", "faculty",
+    "scope", "purpose", "admission", "registration", "assessment",
+    "graduation", "summary", "honesty", "policy", "regulations",
+    "eligibility", "evaluation", "procedure", "annex", "declaration",
+]
+
+
+def is_clause_doc(source: str) -> bool:
+    """True for documents with numbered clauses (e.g. 2026 handbook, 2023 rules, Prospectus).
+    Non-clause documents are Student Handbook, Annual Report, and Start-ups Policy.
+    """
+    src = source.lower()
+    if any(k in src for k in ["student-handbook", "annual-report", "faculty-entrepreneurship", "start-up"]):
+        return False
+    return True
 
 
 def _extract_clauses(text: str) -> list[str]:
@@ -50,6 +70,29 @@ def _clause_sort_key(c: str) -> list[int]:
         return [999]
 
 
+def _is_title_case_heading(s: str) -> bool:
+    """Validate true title case or all caps heading, rejecting wrapped sentence fragments."""
+    words = s.split()
+    if not words or len(words) > 10:
+        return False
+    if s.isupper():
+        return True
+    stop_words = {
+        "and", "or", "the", "to", "for", "in", "of", "on", "at", "by", "with",
+        "a", "an", "as", "&", "/",
+    }
+    if not words[0][0].isupper():
+        return False
+    # In a title, every non-stopword must begin with an uppercase letter
+    for w in words[1:]:
+        clean_w = re.sub(r"[^\w]", "", w)
+        if clean_w.lower() in stop_words:
+            continue
+        if clean_w and clean_w[0].islower():
+            return False
+    return True
+
+
 def _is_real_heading(line: str) -> bool:
     """Identify genuine section and chapter headings."""
     s = line.strip()
@@ -59,34 +102,39 @@ def _is_real_heading(line: str) -> bool:
         return False
     if s.count(",") > 1:
         return False
-    # Markdown headings
+    # Markdown headings from extract stage
     if s.startswith("#"):
         return True
-    # Numbered chapter headings like "1. Introduction", "4. Registration"
-    if re.match(r"^\d+\.\s+[A-Za-z]", s):
+    # Numbered chapter headings like "1. Introduction", "4. Registration", "XII. Policy..."
+    if re.match(r"^(?:[IVXLCDM]+\.|\d+\.)\s+[A-Za-z]", s):
         return True
-    # Meaningful title case subheadings
-    if re.match(r"^[A-Z][A-Za-z0-9\s/&-]{3,65}$", s):
-        title_keywords = [
-            "academic", "course", "degree", "warning", "attendance", "probation",
-            "repeat", "withdraw", "fee", "generative ai", "conduct", "faculty",
-            "scope", "purpose", "admission", "registration", "assessment",
-            "graduation", "summary", "honesty", "policy", "regulations",
-        ]
-        if any(w in s.lower() for w in title_keywords):
+    # Meaningful title case subheadings with domain keywords
+    if _is_title_case_heading(s):
+        s_lower = s.lower()
+        if any(w in s_lower for w in _TITLE_KEYWORDS):
             return True
     return False
 
 
-def _build_section_string(clauses: list[str], heading: str) -> str:
+def _build_section_string(doc_source: str, clauses: list[str], heading: str) -> str:
     """Build section string matching:
-    - If clauses exist: "5.4-5.7 Academic Warning/Probation" or "4.25 Withdrawal from a Course"
-    - If no clauses: "Acceptable Uses of Generative AI Tools" or heading
+    - For non-clause documents: nearest real heading, stripped of leading numeric prefix.
+      Never "Heading on page N". Fallback to document title.
+    - For clause documents: "5.4-5.7 Academic Warning/Probation" or "4.25 Withdrawal from a Course".
     """
     clean_heading = heading.strip().lstrip("#").strip()
     if any(b in clean_heading.lower() for b in _BOILERPLATE_PHRASES) or not clean_heading:
         clean_heading = ""
 
+    # Non-clause documents (Student Handbook, Annual Report, Start-ups Policy)
+    if not is_clause_doc(doc_source):
+        # Strip leading numbers: "4. Acceptable Uses..." -> "Acceptable Uses of Generative AI Tools"
+        h = re.sub(r"^(?:[IVXLCDM]+\.|\d+\.)\s+", "", clean_heading).strip()
+        if not h:
+            return Path(doc_source).stem.replace("-", " ").title()
+        return h
+
+    # Clause-numbered documents
     if not clauses:
         return clean_heading or "Introduction"
 
@@ -118,10 +166,13 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
 
     Splits text while keeping clause definitions and tables intact when they fit
     under `size` words. Page numbers are tracked exactly per paragraph.
-    Section strings include clause numbers and nearest heading.
+    Section strings include clause numbers and nearest heading for clause docs,
+    or the nearest clean heading for non-clause docs.
     IDs are stable: {source}:{cid:04d}.
     """
     paragraphs: list[_Paragraph] = []
+    default_title = Path(doc.source).stem.replace("-", " ").title()
+
     for p in doc.pages:
         raw_blocks = re.split(r"\n\s*\n", p.text)
         for block in raw_blocks:
@@ -166,36 +217,66 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
                     )
 
     chunks: list[Chunk] = []
-    current_heading = "Introduction"
+    current_heading = default_title if not is_clause_doc(doc.source) else "Introduction"
     current_words: list[str] = []
     current_page = 1
     is_overlap_only = True
     cid = 0
 
+    def emit_current(words: list[str], heading: str, page: int) -> None:
+        nonlocal cid
+        if not words:
+            return
+        chunk_text = " ".join(words)
+        chunk_clauses = _extract_clauses(chunk_text) if is_clause_doc(doc.source) else []
+        sec_str = _build_section_string(doc.source, chunk_clauses, heading)
+        cid += 1
+        chunks.append(
+            Chunk(
+                id=f"{doc.source}:{cid:04d}",
+                text=chunk_text,
+                source=doc.source,
+                section=sec_str,
+                page=page,
+                doc_version=doc.doc_version,
+                superseded=doc.superseded,
+            )
+        )
+
     for para in paragraphs:
         if para.is_heading:
-            # Emit current chunk before starting a new heading section
-            if current_words:
-                chunk_text = " ".join(current_words)
-                chunk_clauses = _extract_clauses(chunk_text)
-                sec_str = _build_section_string(chunk_clauses, current_heading)
-                cid += 1
-                chunks.append(
-                    Chunk(
-                        id=f"{doc.source}:{cid:04d}",
-                        text=chunk_text,
-                        source=doc.source,
-                        section=sec_str,
-                        page=current_page,
-                        doc_version=doc.doc_version,
-                        superseded=doc.superseded,
-                    )
-                )
-                current_words = []
-                is_overlap_only = True
-            current_heading = para.heading_text
-            current_page = para.page
-            continue
+            # Check for chapter heading transition like "4. Registration"
+            chap_match = re.match(r"^(\d+)\.\s+[A-Za-z]", para.heading_text)
+            if chap_match and is_clause_doc(doc.source):
+                chap_num = chap_match.group(1)
+                # If current_words contains clauses starting with this chapter (e.g. 4.1 4.2 4.3),
+                # split them so previous chapter text is emitted under previous heading,
+                # and new chapter clauses remain under the new heading.
+                split_idx = len(current_words)
+                for i, w in enumerate(current_words):
+                    if re.match(rf"^{chap_num}\.\d+", w):
+                        split_idx = i
+                        break
+
+                prev_w = current_words[:split_idx]
+                new_w = current_words[split_idx:]
+
+                if prev_w:
+                    emit_current(prev_w, current_heading, current_page)
+
+                current_heading = para.heading_text
+                current_page = para.page
+                current_words = new_w
+                is_overlap_only = False if new_w else True
+                continue
+            else:
+                if current_words:
+                    emit_current(current_words, current_heading, current_page)
+                    current_words = []
+                    is_overlap_only = True
+                current_heading = para.heading_text
+                current_page = para.page
+                continue
 
         words = para.text.split()
         if not words:
@@ -205,29 +286,11 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
             current_page = para.page
             is_overlap_only = False
 
-        # If adding this paragraph fits under size
         if len(current_words) + len(words) <= size:
             current_words.extend(words)
         else:
-            # Paragraph exceeds current chunk: emit current chunk
             if current_words:
-                chunk_text = " ".join(current_words)
-                chunk_clauses = _extract_clauses(chunk_text)
-                sec_str = _build_section_string(chunk_clauses, current_heading)
-                cid += 1
-                chunks.append(
-                    Chunk(
-                        id=f"{doc.source}:{cid:04d}",
-                        text=chunk_text,
-                        source=doc.source,
-                        section=sec_str,
-                        page=current_page,
-                        doc_version=doc.doc_version,
-                        superseded=doc.superseded,
-                    )
-                )
-
-                # Apply overlap
+                emit_current(current_words, current_heading, current_page)
                 if overlap > 0 and len(current_words) > overlap:
                     current_words = current_words[-overlap:]
                 else:
@@ -235,7 +298,6 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
                 is_overlap_only = True
                 current_page = para.page
 
-            # If the paragraph itself exceeds size, split by sentences
             if len(words) > size:
                 sentences = re.split(r"(?<=[.!?])\s+", para.text)
                 for sent in sentences:
@@ -249,21 +311,7 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
                         current_words.extend(swords)
                     else:
                         if current_words:
-                            chunk_text = " ".join(current_words)
-                            chunk_clauses = _extract_clauses(chunk_text)
-                            sec_str = _build_section_string(chunk_clauses, current_heading)
-                            cid += 1
-                            chunks.append(
-                                Chunk(
-                                    id=f"{doc.source}:{cid:04d}",
-                                    text=chunk_text,
-                                    source=doc.source,
-                                    section=sec_str,
-                                    page=current_page,
-                                    doc_version=doc.doc_version,
-                                    superseded=doc.superseded,
-                                )
-                            )
+                            emit_current(current_words, current_heading, current_page)
                             if overlap > 0 and len(current_words) > overlap:
                                 current_words = current_words[-overlap:]
                             else:
@@ -276,22 +324,7 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
                 current_words.extend(words)
                 is_overlap_only = False
 
-    # Emit final remaining words
     if current_words:
-        chunk_text = " ".join(current_words)
-        chunk_clauses = _extract_clauses(chunk_text)
-        sec_str = _build_section_string(chunk_clauses, current_heading)
-        cid += 1
-        chunks.append(
-            Chunk(
-                id=f"{doc.source}:{cid:04d}",
-                text=chunk_text,
-                source=doc.source,
-                section=sec_str,
-                page=current_page,
-                doc_version=doc.doc_version,
-                superseded=doc.superseded,
-            )
-        )
+        emit_current(current_words, current_heading, current_page)
 
     return chunks

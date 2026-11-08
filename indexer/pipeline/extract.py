@@ -52,6 +52,73 @@ def _extract_pdf(path: str, doc_version: str, superseded: bool) -> Document:
                     )
                 text = ocr_text
                 ocr_page_count += 1
+            else:
+                # Structure-aware line extraction with font and bold detection
+                try:
+                    words = pdf_page.extract_words(extra_attrs=["fontname", "size"])
+                    if words:
+                        from collections import Counter
+
+                        sizes = [round(w.get("size", 0), 1) for w in words]
+                        size_counts = Counter(sizes)
+                        body_size = size_counts.most_common(1)[0][0] if size_counts else 10.0
+
+                        lines_words: list[list[dict]] = []
+                        cur_line: list[dict] = []
+                        cur_top = None
+                        for w in words:
+                            if cur_top is None or abs(w["top"] - cur_top) < 3.5:
+                                cur_line.append(w)
+                                cur_top = w["top"]
+                            else:
+                                lines_words.append(cur_line)
+                                cur_line = [w]
+                                cur_top = w["top"]
+                        if cur_line:
+                            lines_words.append(cur_line)
+
+                        out_lines = []
+                        for l_words in lines_words:
+                            line_text = " ".join(w["text"] for w in l_words).strip()
+                            if not line_text:
+                                continue
+                            line_size = max(round(w.get("size", 0), 1) for w in l_words)
+                            line_fonts = [w.get("fontname", "").lower() for w in l_words]
+                            is_bold = any(
+                                "bold" in f or "black" in f or "heavy" in f for f in line_fonts
+                            )
+
+                            is_heading_font = (line_size >= body_size + 1.5) or (
+                                is_bold and line_size >= body_size
+                            )
+                            # Data rows with multiple numbers are tables, not headings
+                            if re.search(r"\d+\s+\d+", line_text):
+                                is_heading_font = False
+
+                            is_numbered = bool(
+                                re.match(r"^(?:[IVXLCDM]+\.|\d+\.)\s+[A-Za-z]", line_text)
+                            )
+
+                            if (
+                                (is_heading_font or is_numbered)
+                                and len(line_text) < 80
+                                and not line_text.endswith(".")
+                            ):
+                                if not any(
+                                    b in line_text.lower()
+                                    for b in ["handbook", "annual report", "page", "nuces"]
+                                ):
+                                    out_lines.append(f"# {line_text}")
+                                else:
+                                    out_lines.append(line_text)
+                            else:
+                                out_lines.append(line_text)
+                        text = "\n".join(out_lines)
+                except Exception as exc:
+                    log.warning(
+                        "Word extraction with font attributes failed, using extract_text",
+                        extra={"error": str(exc)},
+                    )
 
             pages.append(Page(source=source, page=i, text=text, ocr=ocr))
 

@@ -9,6 +9,7 @@ from .models import Document, Page
 
 _PAGE_NUM_RE = re.compile(r"^Page\s+\d+(\s+of\s+\d+)?$", re.IGNORECASE)
 _BARE_NUM_RE = re.compile(r"^\d+$")
+_HANDBOOK_PAGE_RE = re.compile(r"^(?:Student Handbook \d{4}\s+\d+|\d+\s+Student Handbook \d{4})$", re.IGNORECASE)
 _URL_RE = re.compile(r"^(https?://)?www\.\S+\.pk/?$", re.IGNORECASE)
 _MULTI_BLANK_RE = re.compile(r"\n{3,}")
 _CLAUSE_PROTECT_RE = re.compile(r"^\d+(\.\d+)*\s+[A-Za-z]")
@@ -22,6 +23,9 @@ def _is_protected(line: str) -> bool:
     """
     s = line.strip()
     if not s:
+        return False
+    stripped = s.lstrip("# ").strip()
+    if _PAGE_NUM_RE.match(stripped) or _BARE_NUM_RE.match(stripped) or _HANDBOOK_PAGE_RE.match(stripped):
         return False
     if s.startswith("#"):
         return True
@@ -71,8 +75,9 @@ def clean(doc: Document) -> Document:
             if s in repeating_lines:
                 continue
 
-            # Strip bare page numbers or "Page X of Y"
-            if _PAGE_NUM_RE.match(s) or _BARE_NUM_RE.match(s) or _URL_RE.match(s):
+            # Strip bare page numbers, handbook page headers, or URLs
+            s_clean = s.lstrip("# ").strip()
+            if _PAGE_NUM_RE.match(s_clean) or _BARE_NUM_RE.match(s_clean) or _HANDBOOK_PAGE_RE.match(s_clean) or _URL_RE.match(s_clean):
                 continue
 
             kept_lines.append(line)
