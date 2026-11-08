@@ -227,7 +227,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--force", action="store_true", help="download everything again")
-    group.add_argument("--verify", action="store_true", help="check local files against MANIFEST.md")
+    group.add_argument(
+        "--verify", action="store_true", help="check local files against MANIFEST.md"
+    )
     group.add_argument("--list", metavar="URL", help="list document links on an index page")
     args = parser.parse_args()
     if args.verify:

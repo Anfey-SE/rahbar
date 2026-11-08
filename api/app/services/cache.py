@@ -1,19 +1,24 @@
 """Semantic cache layer backed by Redis for RAHBAR API.
 
-Caches answers based on question embedding cosine similarity against a threshold.
-Invalidated by generation ID bump on re-indexing.
-Follow-up questions and abstentions are never cached.
+Key prefix = index_version read from Chroma collection metadata.
+Re-read with a short TTL (~30 seconds) so re-indexing automatically invalidates the cache.
+Hits require cosine similarity >= CACHE_THRESHOLD.
+Never caches follow-ups, abstentions, fallbacks, or unvalidated answers.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
+import time
+import urllib.request
 from typing import Any
 
 from ..config import Settings
-from ..schemas import AskResponse, RetrievedRef
+from ..routes.metrics import CACHE_HITS, CACHE_MISSES
+from ..schemas import AskResponse
 
 log = logging.getLogger("rahbar.cache")
 
@@ -27,11 +32,19 @@ def is_followup(question: str) -> bool:
 
 
 def should_never_cache(question: str, response: AskResponse | None = None) -> bool:
-    """Never-cache rules: follow-up questions and abstentions must never be cached."""
+    """Never-cache rules: follow-up questions, abstentions, and fallbacks."""
     if is_followup(question):
         return True
-    if response is not None and not response.answered_from_context:
-        return True
+    if response is not None:
+        if not response.answered_from_context:
+            return True
+        if not response.citations:
+            return True
+        if response.confidence == "low":
+            return True
+        ans_lower = response.answer.lower()
+        if "could not generate" in ans_lower or "do not have enough information" in ans_lower:
+            return True
     return False
 
 
@@ -39,7 +52,7 @@ def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     """Calculate cosine similarity between two vectors."""
     if not vec_a or not vec_b or len(vec_a) != len(vec_b):
         return 0.0
-    dot = sum(a * b for a, b in zip(vec_a, vec_b))
+    dot = sum(a * b for a, b in zip(vec_a, vec_b, strict=True))
     norm_a = math.sqrt(sum(a * a for a in vec_a))
     norm_b = math.sqrt(sum(b * b for b in vec_b))
     if norm_a == 0.0 or norm_b == 0.0:
@@ -48,15 +61,20 @@ def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 
 
 class SemanticCache:
-    """Redis-backed semantic cache with cosine similarity threshold and generation invalidation."""
+    """Redis semantic cache keyed by Chroma index_version with cosine similarity check."""
 
     def __init__(self, settings: Settings, ttl: int = 3600) -> None:
+        self.settings = settings
         self.host = settings.redis_host
         self.port = settings.redis_port
         self.threshold: float = getattr(settings, "cache_threshold", 0.92)
         self.ttl = ttl
+        self._version_ttl: float = getattr(settings, "cache_index_version_ttl", 30.0)
         self._client: Any = None
+        self._chroma_client: Any = None
         self.enabled: bool = (settings.llm_provider != "stub")
+        self._cached_index_version: str | None = None
+        self._last_version_check: float = 0.0
 
     def _get_client(self) -> Any:
         if not self.enabled:
@@ -76,53 +94,55 @@ class SemanticCache:
                 return None
         return self._client
 
-    def generation_id(self) -> int:
-        """Get current cache generation ID. Incremented on re-index."""
-        client = self._get_client()
-        if client is None:
-            return 0
-        try:
-            val = client.get("cache:generation_id")
-            return int(val) if val else 0
-        except Exception:
-            return 0
+    def get_index_version(self) -> str:
+        """Fetch index_version from Chroma collection metadata, caching for 30s."""
+        now = time.monotonic()
+        if self._cached_index_version and (now - self._last_version_check < self._version_ttl):
+            return self._cached_index_version
 
-    def bump_generation(self) -> int:
-        """Bump generation ID to invalidate all current cache entries atomically."""
-        client = self._get_client()
-        if client is None:
-            return 0
         try:
-            new_gen = client.incr("cache:generation_id")
-            log.info("bumped cache generation_id", extra={"generation_id": new_gen})
-            return new_gen
+            import chromadb
+            from chromadb.config import Settings as ChromaSettings
+
+            if self._chroma_client is None:
+                self._chroma_client = chromadb.HttpClient(
+                    host=self.settings.chroma_host,
+                    port=self.settings.chroma_port,
+                    settings=ChromaSettings(anonymized_telemetry=False),
+                )
+            col = self._chroma_client.get_collection(self.settings.collection)
+            meta = col.metadata or {}
+            self._cached_index_version = str(meta.get("index_version", "default"))
         except Exception as exc:
-            log.warning("failed to bump cache generation_id", extra={"error": str(exc)})
-            return 0
+            log.warning("could not read index_version from chroma", extra={"error": str(exc)})
+            if not self._cached_index_version:
+                self._cached_index_version = "default"
 
-    def invalidate(self) -> bool:
-        """Invalidate cache entries via generation bump."""
-        return self.bump_generation() > 0
+        self._last_version_check = now
+        return self._cached_index_version
 
-    def clear_cache(self) -> bool:
-        """Flush or clear all cached entries."""
-        client = self._get_client()
-        if client is None:
-            return False
-        try:
-            client.flushdb()
-            log.info("flushed redis cache")
-            return True
-        except Exception as exc:
-            log.warning("failed to flush redis cache", extra={"error": str(exc)})
-            return False
+    def _embed(self, text: str) -> list[float]:
+        """Embed question for cache lookup/store via Ollama."""
+        url = f"{self.settings.ollama_url.rstrip('/')}/api/embed"
+        payload = json.dumps({
+            "model": self.settings.embed_model,
+            "input": text,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return data["embeddings"][0]
 
     def lookup(
         self,
         question: str,
         question_embedding: list[float] | None = None,
     ) -> AskResponse | None:
-        """Look up semantically cached response using cosine similarity against threshold."""
+        """Lookup cached AskResponse if cosine similarity >= threshold."""
         if should_never_cache(question):
             return None
 
@@ -131,10 +151,17 @@ class SemanticCache:
             return None
 
         try:
-            gen = self.generation_id()
-            prefix = f"cache:v{gen}:"
+            vec = question_embedding if question_embedding is not None else self._embed(question)
+        except Exception as exc:
+            log.warning("cache embedding failed during lookup", extra={"error": str(exc)})
+            return None
+
+        try:
+            index_ver = self.get_index_version()
+            prefix = f"cache:{index_ver}:"
             keys = client.keys(f"{prefix}*")
             if not keys:
+                CACHE_MISSES.inc()
                 return None
 
             best_sim = -1.0
@@ -144,40 +171,30 @@ class SemanticCache:
                 raw = client.get(key)
                 if not raw:
                     continue
-                entry = json.loads(raw)
-                # Exact match hit
-                if entry.get("question", "").strip().lower() == question.strip().lower():
-                    best_entry = entry
-                    best_sim = 1.0
-                    break
-
-                # Vector similarity match if embeddings available
-                if question_embedding and entry.get("embedding"):
-                    sim = _cosine_similarity(question_embedding, entry["embedding"])
+                try:
+                    entry = json.loads(raw)
+                    cached_vec = entry.get("embedding", [])
+                    sim = _cosine_similarity(vec, cached_vec)
                     if sim > best_sim:
                         best_sim = sim
                         best_entry = entry
+                except (json.JSONDecodeError, KeyError):
+                    continue
 
             if best_entry is not None and best_sim >= self.threshold:
+                CACHE_HITS.inc()
                 log.info(
                     "semantic cache hit",
                     extra={"similarity": round(best_sim, 4), "threshold": self.threshold},
                 )
-                resp_data = best_entry["response"]
-                return AskResponse(
-                    request_id=resp_data.get("request_id", ""),
-                    answer=resp_data["answer"],
-                    citations=resp_data.get("citations", []),
-                    answered_from_context=resp_data.get("answered_from_context", True),
-                    confidence=resp_data.get("confidence", "high"),
-                    retrieved=[RetrievedRef(**r) for r in resp_data.get("retrieved", [])],
-                    provider=resp_data.get("provider", "cache"),
-                )
+                resp_dict = best_entry["response"]
+                return AskResponse.model_validate(resp_dict)
 
+            CACHE_MISSES.inc()
+            return None
         except Exception as exc:
             log.warning("cache lookup error", extra={"error": str(exc)})
-
-        return None
+            return None
 
     def store(
         self,
@@ -185,9 +202,8 @@ class SemanticCache:
         response: AskResponse,
         question_embedding: list[float] | None = None,
     ) -> bool:
-        """Store response in cache unless never_cache condition is met."""
+        """Store response in cache if allowed by caching policy."""
         if should_never_cache(question, response):
-            log.debug("never_cache rule matched; skipping cache store")
             return False
 
         client = self._get_client()
@@ -195,28 +211,23 @@ class SemanticCache:
             return False
 
         try:
-            gen = self.generation_id()
-            import hashlib
+            vec = question_embedding if question_embedding is not None else self._embed(question)
+        except Exception as exc:
+            log.warning("cache embedding failed during store", extra={"error": str(exc)})
+            return False
 
-            q_hash = hashlib.sha256(question.strip().lower().encode()).hexdigest()[:16]
-            key = f"cache:v{gen}:{q_hash}"
-
-            payload = {
+        try:
+            index_ver = self.get_index_version()
+            q_hash = hashlib.sha256(question.strip().lower().encode("utf-8")).hexdigest()[:16]
+            key = f"cache:{index_ver}:{q_hash}"
+            entry = {
                 "question": question,
-                "embedding": question_embedding,
-                "response": {
-                    "request_id": response.request_id,
-                    "answer": response.answer,
-                    "citations": [c.model_dump() for c in response.citations],
-                    "answered_from_context": response.answered_from_context,
-                    "confidence": response.confidence,
-                    "retrieved": [r.model_dump() for r in response.retrieved],
-                    "provider": response.provider,
-                },
+                "embedding": vec,
+                "response": response.model_dump(),
             }
-            client.setex(key, self.ttl, json.dumps(payload))
-            log.debug("stored answer in semantic cache", extra={"key": key, "ttl": self.ttl})
+            client.set(key, json.dumps(entry), ex=self.ttl)
+            log.info("stored response in semantic cache", extra={"key": key})
             return True
         except Exception as exc:
-            log.warning("failed to store in cache", extra={"error": str(exc)})
+            log.warning("failed to store in semantic cache", extra={"error": str(exc)})
             return False

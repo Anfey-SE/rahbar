@@ -67,7 +67,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 
 def test_readyz_all_healthy(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_chroma = MockChromaClient(reachable=True, collection_exists=True, count=3, embed_model="dummy-768")
+    mock_chroma = MockChromaClient(
+        reachable=True, collection_exists=True, count=3, embed_model="dummy-768"
+    )
     mock_redis = MockRedisClient(reachable=True)
 
     monkeypatch.setattr("chromadb.HttpClient", lambda **kwargs: mock_chroma)
@@ -85,7 +87,9 @@ def test_readyz_all_healthy(client: TestClient, monkeypatch: pytest.MonkeyPatch)
 
 
 def test_readyz_empty_collection(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_chroma = MockChromaClient(reachable=True, collection_exists=True, count=0, embed_model="dummy-768")
+    mock_chroma = MockChromaClient(
+        reachable=True, collection_exists=True, count=0, embed_model="dummy-768"
+    )
     mock_redis = MockRedisClient(reachable=True)
 
     monkeypatch.setattr("chromadb.HttpClient", lambda **kwargs: mock_chroma)
@@ -114,7 +118,9 @@ def test_readyz_chroma_down(client: TestClient, monkeypatch: pytest.MonkeyPatch)
 
 
 def test_readyz_redis_down(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_chroma = MockChromaClient(reachable=True, collection_exists=True, count=3, embed_model="dummy-768")
+    mock_chroma = MockChromaClient(
+        reachable=True, collection_exists=True, count=3, embed_model="dummy-768"
+    )
     mock_redis = MockRedisClient(reachable=False)
 
     monkeypatch.setattr("chromadb.HttpClient", lambda **kwargs: mock_chroma)
@@ -127,9 +133,13 @@ def test_readyz_redis_down(client: TestClient, monkeypatch: pytest.MonkeyPatch) 
     assert data["failing_dependency"] == "redis"
 
 
-def test_readyz_model_mismatch(client: TestClient, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+def test_readyz_model_mismatch(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     # Collection was embedded with nomic-embed-text, but API expects dummy-768
-    mock_chroma = MockChromaClient(reachable=True, collection_exists=True, count=3, embed_model="nomic-embed-text")
+    mock_chroma = MockChromaClient(
+        reachable=True, collection_exists=True, count=3, embed_model="nomic-embed-text"
+    )
     mock_redis = MockRedisClient(reachable=True)
 
     monkeypatch.setattr("chromadb.HttpClient", lambda **kwargs: mock_chroma)

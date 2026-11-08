@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import urllib.request
 
 from ..config import Settings
 from ..schemas import Passage
 
 log = logging.getLogger("rahbar.chroma")
+
+_OLDER_PATTERN = re.compile(r"\b(2023|old|previous|earlier)\b", re.IGNORECASE)
 
 
 class ChromaRetriever:
@@ -32,16 +35,21 @@ class ChromaRetriever:
         payload = json.dumps({
             "model": self.settings.embed_model,
             "input": text,
-        }).encode()
+        }).encode("utf-8")
         req = urllib.request.Request(
-            url, data=payload,
+            url,
+            data=payload,
             headers={"Content-Type": "application/json"},
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read())
-        return data["embeddings"][0]
+            data = json.loads(resp.read().decode("utf-8"))
+        embeddings = data.get("embeddings", [])
+        if not embeddings or not embeddings[0]:
+            raise ValueError("empty embedding returned from embedding service")
+        return embeddings[0]
 
-    def retrieve(self, question: str, k: int) -> list[Passage]:
+    def retrieve(self, question: str, k: int | None = None) -> list[Passage]:
+        target_k = k if k is not None and k > 0 else self.settings.top_k
         try:
             collection = self.client.get_collection(self.settings.collection)
         except Exception as exc:
@@ -54,12 +62,19 @@ class ChromaRetriever:
             log.error("embed failed", extra={"error": str(exc)})
             return []
 
-        # Over-fetch to account for superseded filtering
-        results = collection.query(
-            query_embeddings=[vec],  # type: ignore[arg-type]
-            n_results=min(k + 5, 20),
-            include=["documents", "metadatas", "distances"],
-        )
+        # Filter out superseded documents unless the question asks for an older version
+        where_filter = None if _OLDER_PATTERN.search(question) else {"superseded": False}
+
+        try:
+            results = collection.query(
+                query_embeddings=[vec],  # type: ignore[arg-type]
+                n_results=target_k,
+                where=where_filter,  # type: ignore[arg-type]
+                include=["documents", "metadatas", "distances"],
+            )
+        except Exception as exc:
+            log.error("chroma query failed", extra={"error": str(exc)})
+            return []
 
         passages: list[Passage] = []
         raw_ids = results.get("ids")
@@ -72,24 +87,33 @@ class ChromaRetriever:
         metas = raw_metas[0] if raw_metas else []
         dists = raw_dists[0] if raw_dists else []
 
-        for doc_id, text, meta, dist in zip(ids, docs, metas, dists):
+        for doc_id, text, meta, dist in zip(ids, docs, metas, dists, strict=False):
             m = dict(meta) if meta else {}
-            # Filter out superseded documents (section 3.2)
-            if m.get("superseded", False):
-                continue
             page_val = m.get("page")
+            parsed_page: int | None = None
+            if page_val is not None:
+                try:
+                    parsed_page = int(page_val)
+                except (ValueError, TypeError):
+                    parsed_page = None
+
+            # Cosine distance in Chroma: similarity = 1 - cosine distance
+            score = round(1.0 - float(dist), 4)
             passages.append(Passage(
                 chunk_id=str(doc_id),
                 text=str(text or ""),
                 source=str(m.get("source", "")),
                 section=str(m.get("section", "")),
-                page=int(str(page_val)) if page_val is not None else None,
-                score=round(1.0 - float(dist), 4),  # cosine distance → similarity
+                page=parsed_page,
+                score=score,
             ))
-            if len(passages) >= k:
-                break
 
-        log.info("retrieved",
-                 extra={"k": k, "returned": len(passages),
-                        "scores": [p.score for p in passages]})
+        log.info(
+            "retrieved",
+            extra={
+                "k": target_k,
+                "returned": len(passages),
+                "scores": [p.score for p in passages],
+            },
+        )
         return passages

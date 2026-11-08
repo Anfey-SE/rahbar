@@ -90,10 +90,14 @@ def readyz(request: Request, response: Response) -> dict[str, Any]:
             extra={"expected": settings.embed_model, "found": collection_embed_model},
         )
         response.status_code = 503
+        detail_msg = (
+            f"Collection embed_model '{collection_embed_model}' does not "
+            f"match expected '{settings.embed_model}'"
+        )
         return {
             "status": "not_ready",
             "failing_dependency": "embed_model",
-            "detail": f"Collection embed_model '{collection_embed_model}' does not match expected '{settings.embed_model}'",
+            "detail": detail_msg,
             "expected": settings.embed_model,
             "found": collection_embed_model,
         }
