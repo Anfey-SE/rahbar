@@ -19,7 +19,7 @@ def _extract_pdf(path: str, doc_version: str, superseded: bool) -> Document:
     try:
         import pdfplumber  # type: ignore[import-untyped]
     except ImportError:
-        raise RuntimeError("pdfplumber not installed: pip install pdfplumber")
+        raise RuntimeError("pdfplumber not installed: pip install pdfplumber") from None
 
     source = Path(path).name
     pages: list[Page] = []

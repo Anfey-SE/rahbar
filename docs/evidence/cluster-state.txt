@@ -1,0 +1,16 @@
+$ kubectl get endpoints api -n rahbar
+NAME   ENDPOINTS                                                    AGE
+api    10.244.120.104:8000,10.244.120.106:8000,10.244.120.93:8000   2d14h
+
+$ kubectl get hpa -n rahbar
+NAME   REFERENCE        TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+api    Deployment/api   cpu: 8%/70%   3         8         3          25h
+
+$ kubectl top pods -n rahbar
+NAME                     CPU(cores)   MEMORY(bytes)   
+api-8464c67494-7db9h     8m           274Mi           
+api-8464c67494-7sx2x     9m           265Mi           
+api-8464c67494-xgjkk     8m           244Mi           
+chroma-0                 15m          793Mi           
+redis-7766988887-xcs76   16m          16Mi            
+ui-5688c6ccc8-rpwrm      1m           2Mi             
