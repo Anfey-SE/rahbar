@@ -42,8 +42,18 @@ def _citation_matches_passage(c: Citation, p: Passage) -> bool:
     c_sec = c.section.strip()
     p_sec = p.section.strip()
 
-    # Exact or substring match (case-insensitive)
-    if c_sec == p_sec or c_sec.lower() in p_sec.lower() or p_sec.lower() in c_sec.lower():
+    # List-item markers like 'c', 'a', 'b' or single letters are never valid sections
+    if (
+        len(c_sec) <= 2
+        and not c_sec.isdigit()
+        or re.match(r"^\(?[a-zA-Z0-9]{1,2}[.)]?$", c_sec)
+    ):
+        return False
+
+    # Exact or substring match (case-insensitive) for meaningful section names
+    if c_sec.lower() == p_sec.lower():
+        return True
+    if len(c_sec) >= 3 and (c_sec.lower() in p_sec.lower() or p_sec.lower() in c_sec.lower()):
         return True
 
     # Clause range match (e.g. c.section = "5.4", p.section = "5.4-5.7 Academic Warning/Probation")
