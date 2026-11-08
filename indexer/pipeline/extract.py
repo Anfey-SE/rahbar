@@ -34,8 +34,8 @@ def _extract_pdf(path: str, doc_version: str, superseded: bool) -> Document:
             if ocr:
                 ocr_text = ""
                 try:
-                    from pdf2image import convert_from_path  # type: ignore[import-untyped]
                     import pytesseract  # type: ignore[import-untyped]
+                    from pdf2image import convert_from_path  # type: ignore[import-untyped]
 
                     images = convert_from_path(
                         path, first_page=i, last_page=i, dpi=_OCR_DPI
@@ -93,6 +93,14 @@ def _extract_pdf(path: str, doc_version: str, superseded: bool) -> Document:
                             )
                             # Data rows with multiple numbers are tables, not headings
                             if re.search(r"\d+\s+\d+", line_text):
+                                is_heading_font = False
+
+                            # List items like 'a)', 'b.', 'c)', '(i)' or single letters are not headings
+                            if (
+                                re.match(r"^\(?[a-zA-Z0-9]{1,2}[.)]\s*$", line_text)
+                                or len(line_text.strip()) <= 2
+                                or not re.search(r"[a-zA-Z]{3,}", line_text)
+                            ):
                                 is_heading_font = False
 
                             is_numbered = bool(

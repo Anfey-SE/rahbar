@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import NamedTuple
 
 from .models import Chunk, Document
@@ -96,21 +96,29 @@ def _is_title_case_heading(s: str) -> bool:
 def _is_real_heading(line: str) -> bool:
     """Identify genuine section and chapter headings."""
     s = line.strip()
-    if not s or len(s) > 75 or s.endswith("."):
+    s_clean = s.lstrip("#").strip()
+    if not s_clean or len(s_clean) > 75 or s_clean.endswith("."):
         return False
-    if any(b in s.lower() for b in _BOILERPLATE_PHRASES):
+    # Single letters or list items (like 'c', 'c)', '1.') are never headings
+    if (
+        len(s_clean) <= 2
+        or re.match(r"^\(?[a-zA-Z0-9]{1,2}[.)]?$", s_clean)
+        or not re.search(r"[a-zA-Z]{3,}", s_clean)
+    ):
         return False
-    if s.count(",") > 1:
+    if any(b in s_clean.lower() for b in _BOILERPLATE_PHRASES):
+        return False
+    if s_clean.count(",") > 1:
         return False
     # Markdown headings from extract stage
     if s.startswith("#"):
         return True
     # Numbered chapter headings like "1. Introduction", "4. Registration", "XII. Policy..."
-    if re.match(r"^(?:[IVXLCDM]+\.|\d+\.)\s+[A-Za-z]", s):
+    if re.match(r"^(?:[IVXLCDM]+\.|\d+\.)\s+[A-Za-z]", s_clean):
         return True
     # Meaningful title case subheadings with domain keywords
-    if _is_title_case_heading(s):
-        s_lower = s.lower()
+    if _is_title_case_heading(s_clean):
+        s_lower = s_clean.lower()
         if any(w in s_lower for w in _TITLE_KEYWORDS):
             return True
     return False
@@ -123,7 +131,13 @@ def _build_section_string(doc_source: str, clauses: list[str], heading: str) -> 
     - For clause documents: "5.4-5.7 Academic Warning/Probation" or "4.25 Withdrawal from a Course".
     """
     clean_heading = heading.strip().lstrip("#").strip()
-    if any(b in clean_heading.lower() for b in _BOILERPLATE_PHRASES) or not clean_heading:
+    if (
+        len(clean_heading) <= 2
+        or re.match(r"^\(?[a-zA-Z0-9]{1,2}[.)]?$", clean_heading)
+        or not re.search(r"[a-zA-Z]{3,}", clean_heading)
+        or any(b in clean_heading.lower() for b in _BOILERPLATE_PHRASES)
+        or not clean_heading
+    ):
         clean_heading = ""
 
     # Non-clause documents (Student Handbook, Annual Report, Start-ups Policy)
