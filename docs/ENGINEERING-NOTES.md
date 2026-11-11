@@ -1,12 +1,18 @@
 # Engineering Notes
 
-## 5\. recall@5 by question type: where is it worst, and why?
+## 5. recall@5 by question type: where is it worst, and why?
 
-Recall@5 is worst on exact-term questions (0.5000 / 50%), compared to version-sensitive (1.0000), injection (1.0000), and ordinary questions (0.8750).
+From our real evaluation on the 15-question golden set (`eval/results.json`):
+- **Version-sensitive:** 1.0000 (100%)
+- **Prompt injection:** 1.0000 (100%)
+- **Ordinary:** 0.8750 (87.5%)
+- **Exact-term:** 0.5000 (50.0%) — **Worst**
 
-Why embeddings struggle: Dense embedding models like nomic-embed-text project text into a continuous semantic latent space optimized for general topical similarity rather than exact alphanumeric token overlap. When a student query specifies an exact numeric clause (1.21 in q02) or specific fee calculation rule (q11), dense vector dot-products match broadly related passages (e.g. general attendance rules or closure of admission) that lack the exact clause number.
+**Why embeddings struggle:**  
+Dense embedding models like `nomic-embed-text` project text into a continuous semantic latent space optimized for general topical similarity rather than exact alphanumeric token overlap. When a student query specifies an exact numeric clause (`1.21` in q02) or specific fee calculation rule (`q11`), dense vector dot-products match broadly related passages (e.g. general attendance rules or closure of admission) that lack the exact clause number.
 
-RAG lecture technique: Hybrid retrieval (sparse lexical BM25 / keyword search combined with dense vector embeddings via Reciprocal Rank Fusion) or metadata pre-filtering by clause number addresses this by ensuring exact token matches are boosted to the top ranks.
+**RAG lecture technique:**  
+Hybrid retrieval (sparse lexical BM25 / keyword search combined with dense vector embeddings via Reciprocal Rank Fusion) or metadata pre-filtering by clause number addresses this by ensuring exact token matches are boosted to the top ranks.
 
 ## Platform answers (Member 1)
 

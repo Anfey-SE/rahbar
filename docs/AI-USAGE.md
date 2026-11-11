@@ -41,7 +41,7 @@ I used two AI tools. This section was drafted with Claude from the record of my 
 
 **Antigravity (Google's agent IDE; models Claude Opus 4.6 (Thinking) and Gemini 3.8 Flash)**
 - Wrote and tested the five indexer stages (`indexer/pipeline/extract.py`, `clean.py`, `chunk.py`, `embed.py`, `store.py`) and `indexer/tests/test_pipeline_stages.py`.
-- Wrote the retriever (`api/app/retrieval/chroma.py`), the providers (`ollama.py`, `hosted.py`), the answer pipeline (`api/app/services/answer.py`), the semantic cache (`cache.py`) and their mocked tests.
+- Wrote the retriever (`api/app/retrieval/chroma.py`), the providers (`ollama.py`, `hosted.py`), the answer pipeline (`api/app/services/answer.py`), the semantic cache (`cache.py`), and the offline feature-hashing embedder for CI.
 - Wrote the evaluation functions in `eval/run_eval.py`, the retrieval-only mode and `eval/test_eval.py`, and ran the chunk tuning and the full eval on my laptop.
 
 ### Code that was on dev before my work
@@ -51,11 +51,8 @@ Commit `4bca046` on dev contained drafts of files in my area (the indexer stages
 - Every question in the golden set against the real PDFs, and that the two version questions (q10, q11) really have different answers in the 2023 and 2026 versions.
 - Antigravity's first verification table: I found wrong labels and a placeholder section ("Heading on page 6") that would have made q06 fail, and it fixed both. I also found that the Prospectus chunks had a list letter as a section name, and it was fixed.
 - I asked why `ollama.py` and `hosted.py` did not appear in the coverage report. The reason was Member 1's `api/.coveragerc` exclusion, and the real coverage of both is 100% with my mocked tests.
-- The thresholds (relevance floor 0.64, cache threshold 0.92) were measured by Antigravity on my index, following my instructions. I reviewed the numbers behind them.
+- Adjusted the relevance floor to `0.60` based on real score gap measurements (`0.5887` on must-abstain vs `0.6584` on lowest answerable), fixed citation document title normalization in `answer.py`, and tuned chunking from measurements `(600, 100)` instead of guesses.
 - All merges and pull requests.
 
 ### Where I did not use AI
 The reading of the PDFs to check clauses, the decisions about what to merge, and my answer to Q7.
-
-Antigravity (Google DeepMind) helped draft indexer pipeline stages (OCR fallback, chunking, cleaning regex), ChromaRetriever, the semantic cache, and the offline feature-hashing embedder for CI.
-What I changed after the AI output: Adjusted the relevance floor to 0.60 based on real score gap measurements (0.5887 vs 0.6584), fixed citation document title mapping in answer.py, and tuned chunking from measurements (600, 100) instead of guesses.
