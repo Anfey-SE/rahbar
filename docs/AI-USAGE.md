@@ -8,7 +8,6 @@ This project used AI assistance in the following specific ways. All AI-generated
 | Google Antigravity | Generating the initial structure of CI/CD workflow files; adapting to our registry and secrets model | .github/workflows/ |
 | Google Antigravity | Drafting the defensive `_int()` helper in `config.py` to handle K8s service-link URL injection | api/app/config.py |
 | Google Antigravity | Helping diagnose the `enableServiceLinks` crash (CrashLoopBackOff with `ValueError: invalid literal for int`) | api/app/config.py, k8s/base/*-deployment.yaml |
-| GitHub Copilot | Autocomplete for repetitive Pydantic model fields in `schemas.py` | api/app/schemas.py |
 
 ## What was NOT AI-generated
 
