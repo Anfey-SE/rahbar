@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+  namespace: rahbar
+data:
+  EMBED_PROVIDER: "hash"
+  EMBED_MODEL: "hash-768"
+  RETRIEVER: "chroma"
+  LLM_PROVIDER: "stub"
+  RELEVANCE_FLOOR: "0.20"
+  CHROMA_COLLECTION: "rahbar"

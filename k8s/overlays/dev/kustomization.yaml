@@ -5,3 +5,8 @@ namespace: rahbar
 
 resources:
   - ../../base
+  - fixture-corpus-configmap.yaml
+
+patches:
+  - path: patch-configmap.yaml
+  - path: patch-indexer-job.yaml
