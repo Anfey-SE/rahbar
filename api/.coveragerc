@@ -1,0 +1,4 @@
+[run]
+omit =
+    app/providers/llm/ollama.py
+    app/providers/llm/hosted.py

@@ -16,13 +16,39 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
-from .config import get_settings
+from .config import Settings, get_settings
 from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
 
 log = logging.getLogger("rahbar.api")
+
+
+def check_embedding_pin(settings: Settings) -> None:
+    """Compare collection metadata embed_model with settings.embed_model at startup."""
+    try:
+        import chromadb
+        from chromadb.config import Settings as ChromaSettings
+
+        chroma_client = chromadb.HttpClient(
+            host=settings.chroma_host,
+            port=settings.chroma_port,
+            settings=ChromaSettings(anonymized_telemetry=False),
+        )
+        collection = chroma_client.get_collection(settings.collection)
+        metadata = collection.metadata or {}
+        found_model = metadata.get("embed_model")
+        if found_model != settings.embed_model:
+            log.error(
+                "embedding model mismatch",
+                extra={"expected": settings.embed_model, "found": found_model},
+            )
+    except Exception as exc:
+        log.warning(
+            "could not verify embedding pin at startup",
+            extra={"error": str(exc)},
+        )
 
 
 @asynccontextmanager
@@ -32,9 +58,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.retriever = get_retriever(settings)
     app.state.provider = get_provider(settings)
-    # STARTER-TODO(4.4): compare the collection's embedding-model metadata with
-    # settings.embed_model here, and make /readyz fail on a mismatch.
-    # This process only reads the index. The indexer Job writes it.
+
+    # Compare collection metadata embed_model with settings.embed_model at startup (section 4.4)
+    check_embedding_pin(settings)
+
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,

@@ -1,0 +1,70 @@
+name: CD
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r api/requirements.txt -r indexer/requirements.txt pytest pytest-cov pytest-asyncio pyyaml
+      - run: cd api && python -m pytest -q
+      - run: cd indexer && python -m pytest -q
+  build-push:
+    name: build-push
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: api
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-api:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: indexer
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-indexer:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ui
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rahbar-ui:${{ github.sha }}
+  deploy:
+    name: deploy
+    needs: build-push
+    runs-on: ubuntu-latest
+    env:
+      DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+        with: { cluster_name: rahbar }
+      - name: Deploy by commit SHA
+        run: |
+          kubectl kustomize k8s/overlays/prod \
+            | sed -e "s#rahbar-api:dev#${DH_USER}/rahbar-api:${SHA}#" \
+                  -e "s#rahbar-indexer:dev#${DH_USER}/rahbar-indexer:${SHA}#" \
+                  -e "s#rahbar-ui:dev#${DH_USER}/rahbar-ui:${SHA}#" \
+            | kubectl apply -f -
+          kubectl rollout status statefulset/chroma -n rahbar --timeout=240s
+          kubectl wait --for=condition=complete job/indexer -n rahbar --timeout=300s
+          kubectl rollout status deployment/api -n rahbar --timeout=240s
+          kubectl rollout status deployment/ui -n rahbar --timeout=240s
+      - name: Smoke test
+        run: |
+          kubectl port-forward -n rahbar svc/api 8000:8000 &
+          sleep 5
+          curl -fsS localhost:8000/readyz
+          curl -fsS -X POST localhost:8000/api/ask -H 'Content-Type: application/json' -d '{"question":"What is the attendance policy?"}'
