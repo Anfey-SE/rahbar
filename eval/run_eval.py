@@ -389,7 +389,7 @@ def main() -> int:
     else:
         # Full mode: call the API (includes LLM generation)
         headers = {"Host": args.host} if args.host else {}
-        with httpx.Client(timeout=120.0, headers=headers) as client:
+        with httpx.Client(timeout=600.0, headers=headers) as client:
             for q in questions:
                 started = time.perf_counter()
                 response = ask(client, args.api, q["question"])

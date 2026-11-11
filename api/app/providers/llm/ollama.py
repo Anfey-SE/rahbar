@@ -82,7 +82,7 @@ class OllamaProvider:
 
         for attempt in range(1, 3):
             try:
-                with urllib.request.urlopen(req, timeout=120) as resp:
+                with urllib.request.urlopen(req, timeout=300) as resp:
                     raw = json.loads(resp.read().decode("utf-8"))
 
                 prompt_eval_count = int(raw.get("prompt_eval_count", 0))
