@@ -48,7 +48,7 @@ class Settings:
     redis_host: str = "redis"
     redis_port: int = 6379
     cache_threshold: float = 0.92
-    relevance_floor: float = 0.64
+    relevance_floor: float = 0.60
     cache_index_version_ttl: float = 30.0
 
     # Retrieval and generation
@@ -73,7 +73,7 @@ def get_settings() -> Settings:
         redis_host=os.environ.get("REDIS_HOST", "redis"),
         redis_port=_int("REDIS_PORT", 6379),
         cache_threshold=_float("CACHE_THRESHOLD", 0.92),
-        relevance_floor=_float("RELEVANCE_FLOOR", 0.64),
+        relevance_floor=_float("RELEVANCE_FLOOR", 0.60),
         cache_index_version_ttl=_float("CACHE_INDEX_VERSION_TTL", 30.0),
         top_k=_int("TOP_K", 5),
         temperature=_float("TEMPERATURE", 0.2),

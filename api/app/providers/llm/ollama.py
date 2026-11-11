@@ -23,6 +23,8 @@ _SYSTEM = (
     "set answered_from_context to false, citations to an empty list, and confidence to low.\n"
     "When answering, include precise citations matching source, section, and page of "
     "the supporting passage.\n"
+    "In citations, you MUST copy the exact filename string from 'source=...' into the citation "
+    "'source' field (e.g. 'academic-rules-handbook-jun-2026.pdf'), NOT a title or description.\n"
     "Never fabricate citations."
 )
 
@@ -82,7 +84,7 @@ class OllamaProvider:
 
         for attempt in range(1, 3):
             try:
-                with urllib.request.urlopen(req, timeout=120) as resp:
+                with urllib.request.urlopen(req, timeout=300) as resp:
                     raw = json.loads(resp.read().decode("utf-8"))
 
                 prompt_eval_count = int(raw.get("prompt_eval_count", 0))
@@ -102,6 +104,7 @@ class OllamaProvider:
                 )
 
                 content = raw.get("message", {}).get("content", "")
+                log.info("ollama raw content", extra={"content": content})
                 data = json.loads(content)
                 return Answer.model_validate(data)
             except Exception as exc:
