@@ -21,7 +21,7 @@ graph LR
 
 ```bash
 # 1. Start minikube
-minikube start --driver=docker
+minikube start --driver=docker --cni=calico --memory=4096 --cpus=4
 
 # 2. Enable ingress
 minikube addons enable ingress
@@ -94,7 +94,7 @@ The indexer is a one-shot Kubernetes Job (`k8s/base/indexer-job.yaml`). A weekly
 
 ```bash
 # minikube (Windows/WSL)
-minikube start --driver=docker --memory=4096
+minikube start --driver=docker --cni=calico --memory=4096 --cpus=4
 minikube addons enable ingress
 minikube tunnel   # in a separate terminal (for Ingress on port 80)
 ```
@@ -105,16 +105,21 @@ All settings come from the ConfigMap `rahbar-config` in namespace `rahbar`. Key 
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `EMBED_MODEL` | `dummy-768` | Must match what the indexer used |
-| `RETRIEVER` | `stub` | `stub` or `chroma` |
-| `LLM_PROVIDER` | `stub` | `stub`, `ollama-host`, or `hosted` |
+| `EMBED_MODEL` | `nomic-embed-text` | Embedding model (must match what indexer used; `hash-768` for offline CI) |
+| `EMBED_PROVIDER` | `ollama` | Embedding provider: `ollama` (default) or `hash` (offline deterministic) |
+| `RETRIEVER` | `chroma` | `stub` or `chroma` |
+| `LLM_PROVIDER` | `ollama-host` | `stub`, `ollama-host`, or `hosted` |
+| `RELEVANCE_FLOOR` | `0.60` | Cosine similarity threshold for abstention (0.20 for CI fixtures) |
+| `CHUNK_SIZE` | `600` | Shipped chunk size in words (measured optimal on golden set) |
+| `CHUNK_OVERLAP` | `100` | Chunk overlap in words |
+| `CACHE_THRESHOLD` | `0.92` | Semantic cache hit cosine similarity threshold in Redis |
 | `CHROMA_HOST` | `chroma` | Chroma service name |
 | `REDIS_HOST` | `redis` | Redis service name |
 
 ## Team
 
-- **Member 1** — Platform & DevOps (Dockerfiles, Kubernetes, CI/CD, /readyz, embedding pin)
-- **Member 2** — RAG pipeline (retriever, providers, eval, corpus)
+- **Member 1 (Humna Attique)** — Platform & DevOps (Dockerfiles, Kubernetes manifests, CI/CD, /readyz, embedding pin, infra docs)
+- **Member 2 (Amna Hafeez / Ashley)** — RAG pipeline (Corpus selection & fetch, 5 indexer stages, ChromaRetriever, LLM providers, evaluation engine, semantic cache, chunk tuning)
 
 ## Deploy: exact apply order (from a clean clone)
 

@@ -1,0 +1,65 @@
+{
+  "recall_at_3": 1.0,
+  "recall_at_5": 1.0,
+  "citation_validity": 1.0,
+  "abstention_correctness": 1.0,
+  "recall_at_5_by_type": {
+    "ordinary": 1.0,
+    "version": 1.0,
+    "exact": 1.0,
+    "injection": 1.0
+  },
+  "n_questions": 6,
+  "per_question": [
+    {
+      "id": "f01",
+      "type": "ordinary",
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "abstention_correct": null
+    },
+    {
+      "id": "f02",
+      "type": "version",
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "abstention_correct": null
+    },
+    {
+      "id": "f03",
+      "type": "version",
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "abstention_correct": null
+    },
+    {
+      "id": "f04",
+      "type": "exact",
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "abstention_correct": null
+    },
+    {
+      "id": "f05",
+      "type": "abstain",
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "abstention_correct": true
+    },
+    {
+      "id": "f06",
+      "type": "injection",
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "abstention_correct": null
+    }
+  ],
+  "golden": "eval/fixtures/golden.fixture.yaml",
+  "questions": 6
+}

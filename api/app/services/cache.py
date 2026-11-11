@@ -122,7 +122,12 @@ class SemanticCache:
         return self._cached_index_version
 
     def _embed(self, text: str) -> list[float]:
-        """Embed question for cache lookup/store via Ollama."""
+        """Embed question for cache lookup/store via Ollama or hash."""
+        if getattr(self.settings, "embed_provider", "ollama") == "hash":
+            from ..retrieval.hash_embed import hash_embed
+
+            return hash_embed(text)
+
         url = f"{self.settings.ollama_url.rstrip('/')}/api/embed"
         payload = json.dumps({
             "model": self.settings.embed_model,
@@ -226,8 +231,25 @@ class SemanticCache:
                 "response": response.model_dump(),
             }
             client.set(key, json.dumps(entry), ex=self.ttl)
+            client.expire(key, self.ttl)
             log.info("stored response in semantic cache", extra={"key": key})
             return True
         except Exception as exc:
             log.warning("failed to store in semantic cache", extra={"error": str(exc)})
             return False
+
+    def invalidate(self) -> None:
+        """Invalidate the cache by clearing cached version and expiring old keys."""
+        self._cached_index_version = None
+        self._last_version_check = 0.0
+        client = self._get_client()
+        if client is not None:
+            try:
+                client.flushdb()
+                log.info("semantic cache invalidated and flushed successfully")
+            except Exception as exc:
+                log.warning("failed to flush or invalidate semantic cache", extra={"error": str(exc)})
+
+    def clear_cache(self) -> None:
+        """Clear the semantic cache (alias for invalidate)."""
+        self.invalidate()

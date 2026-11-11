@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import math
+import re
 import time
 import urllib.error
 import urllib.request
@@ -16,15 +19,52 @@ _BATCH_SIZE = 32  # Ollama handles up to ~64 comfortably
 _MAX_RETRIES = 3
 _RETRY_BACKOFF = 1.5  # seconds base backoff
 
+_TOKEN_RE = re.compile(r"\b\w+\b")
+HASH_DIMENSION = 768
+
+
+def hash_embed(text: str, dim: int = HASH_DIMENSION) -> list[float]:
+    """Deterministic feature-hashing embedder.
+
+    Extracts lowercase word tokens, hashes each token with hashlib.sha256,
+    maps to dim dimensions with sign hashing, and applies L2 normalization.
+    Completely local with no network calls.
+    """
+    tokens = _TOKEN_RE.findall(text.lower())
+    if not tokens:
+        vec = [0.0] * dim
+        vec[0] = 1.0
+        return vec
+
+    vec = [0.0] * dim
+    for tok in tokens:
+        h = hashlib.sha256(tok.encode("utf-8")).digest()
+        idx = int.from_bytes(h[:4], "big") % dim
+        sign = 1.0 if h[4] % 2 == 0 else -1.0
+        vec[idx] += sign
+
+    norm = math.sqrt(sum(x * x for x in vec))
+    if norm == 0.0:
+        vec[0] = 1.0
+        return vec
+    return [x / norm for x in vec]
+
 
 def embed(texts: list[str], settings: IndexerSettings) -> list[list[float]]:
-    """Embed all texts via Ollama /api/embed, in batches of _BATCH_SIZE.
+    """Embed all texts via Ollama /api/embed or deterministic hash_embed.
 
     Retries transient failures with exponential backoff and validates that
     all returned vectors are non-empty and uniform in dimension.
     """
     if not texts:
         return []
+
+    if settings.embed_provider == "hash":
+        log.info(
+            "using feature-hashing embedder",
+            extra={"count": len(texts), "dimension": HASH_DIMENSION},
+        )
+        return [hash_embed(t, HASH_DIMENSION) for t in texts]
 
     url = f"{settings.ollama_url.rstrip('/')}/api/embed"
     all_vecs: list[list[float]] = []

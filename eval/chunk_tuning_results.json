@@ -1,0 +1,56 @@
+[
+  {
+    "size": 200,
+    "overlap": 30,
+    "chunks": 857,
+    "extract_clean_sec": 206.92,
+    "chunk_sec": 0.08,
+    "embed_sec": 314.47,
+    "store_sec": 4.74,
+    "index_time_sec": 526.21,
+    "recall_at_3": 0.6923,
+    "recall_at_5": 0.6923,
+    "recall_at_5_by_type": {
+      "ordinary": 0.75,
+      "exact": 0.5,
+      "version": 0.5,
+      "injection": 1.0
+    }
+  },
+  {
+    "size": 400,
+    "overlap": 50,
+    "chunks": 744,
+    "extract_clean_sec": 206.92,
+    "chunk_sec": 0.17,
+    "embed_sec": 302.44,
+    "store_sec": 2.37,
+    "index_time_sec": 511.9,
+    "recall_at_3": 0.6923,
+    "recall_at_5": 0.7692,
+    "recall_at_5_by_type": {
+      "ordinary": 0.75,
+      "exact": 0.5,
+      "version": 1.0,
+      "injection": 1.0
+    }
+  },
+  {
+    "size": 600,
+    "overlap": 100,
+    "chunks": 722,
+    "extract_clean_sec": 206.92,
+    "chunk_sec": 0.11,
+    "embed_sec": 316.22,
+    "store_sec": 3.02,
+    "index_time_sec": 526.27,
+    "recall_at_3": 0.6923,
+    "recall_at_5": 0.8462,
+    "recall_at_5_by_type": {
+      "ordinary": 0.875,
+      "exact": 0.5,
+      "version": 1.0,
+      "injection": 1.0
+    }
+  }
+]

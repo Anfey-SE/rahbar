@@ -80,3 +80,18 @@ jobs:
           sleep 5
           curl -fsS localhost:8000/readyz
           curl -fsS -X POST localhost:8000/api/ask -H 'Content-Type: application/json' -d '{"question":"What is the attendance policy?"}'
+      - name: Eval gate (fixture corpus)
+        run: |
+          pip install httpx pyyaml
+          kubectl port-forward -n rahbar svc/api 8000:8000 &
+          sleep 5
+          python eval/run_eval.py --api http://localhost:8000 \
+            --golden eval/fixtures/golden.fixture.yaml \
+            --baseline eval/fixtures/baseline.fixture.json \
+            --out eval-results.json
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval-results.json

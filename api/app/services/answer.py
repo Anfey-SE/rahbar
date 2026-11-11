@@ -86,6 +86,25 @@ def _normalize_citation(c: Citation, valid_passages: list[Passage]) -> Citation:
                 section=c.section if c.section else target_p.section,
                 page=c.page if c.page is not None else target_p.page,
             )
+
+    # When model outputs the human document title instead of the PDF filename
+    # (e.g. "Undergraduate Academic Rules and Regulations 2026" instead of "academic-rules-handbook-jun-2026.pdf")
+    if not raw_src.lower().endswith(".pdf"):
+        for p in valid_passages:
+            p_base = p.source.replace(".pdf", "").replace("-", " ")
+            if (
+                p_base.lower() in raw_src.lower()
+                or raw_src.lower() in p_base.lower()
+                or ("academic rules" in raw_src.lower() and "academic-rules" in p.source)
+            ) and _citation_matches_passage(
+                Citation(source=p.source, section=c.section, page=c.page), p
+            ):
+                return Citation(
+                    source=p.source,
+                    section=c.section if c.section else p.section,
+                    page=c.page if c.page is not None else p.page,
+                )
+
     return c
 
 
@@ -188,6 +207,16 @@ def answer_question(
     if len(valid_citations) < len(answer.citations):
         dropped_count = len(answer.citations) - len(valid_citations)
         log.warning("dropped invalid citations", extra={"dropped": dropped_count})
+
+    log.info(
+        "answer debug",
+        extra={
+            "raw_answered_from_context": answer.answered_from_context,
+            "raw_citations": [c.model_dump() for c in answer.citations],
+            "valid_citations": [c.model_dump() for c in valid_citations],
+            "reasoning": answer.reasoning,
+        },
+    )
 
     answered_from_context = answer.answered_from_context
     answer_text = answer.answer

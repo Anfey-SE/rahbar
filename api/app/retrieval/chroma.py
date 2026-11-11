@@ -30,7 +30,12 @@ class ChromaRetriever:
         )
 
     def _embed(self, text: str) -> list[float]:
-        """Embed via Ollama /api/embed (same model as the indexer used)."""
+        """Embed text using configured embed_provider (ollama or hash)."""
+        if getattr(self.settings, "embed_provider", "ollama") == "hash":
+            from .hash_embed import hash_embed
+
+            return hash_embed(text)
+
         url = f"{self.settings.ollama_url.rstrip('/')}/api/embed"
         payload = json.dumps({
             "model": self.settings.embed_model,
