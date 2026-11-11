@@ -110,3 +110,18 @@ def test_chroma_retriever_embed_call() -> None:
     with patch("urllib.request.urlopen", return_value=fake_resp):
         vec = retriever._embed("hello world")
         assert vec == [0.5, 0.6, 0.7]
+
+
+def test_chroma_retriever_hash_embed_no_network() -> None:
+    settings = Settings(embed_provider="hash", embed_model="hash-768")
+    with patch("chromadb.HttpClient"):
+        retriever = ChromaRetriever(settings)
+
+    # Must generate 768-dim vector without calling urlopen
+    with patch("urllib.request.urlopen") as mock_url:
+        vec = retriever._embed("When is a student placed on academic warning?")
+        mock_url.assert_not_called()
+        assert len(vec) == 768
+        import math
+        norm = math.sqrt(sum(x * x for x in vec))
+        assert abs(norm - 1.0) < 1e-5
