@@ -1,13 +1,13 @@
 {
-  "recall_at_3": 0.6250,
-  "recall_at_5": 0.6875,
+  "recall_at_3": 0.6923,
+  "recall_at_5": 0.8462,
   "citation_validity": 1.0,
   "abstention_correctness": 1.0,
   "recall_at_5_by_type": {
-    "factual": 0.6667,
-    "version": 0.5000,
-    "exact": 0.8000,
-    "ordinary": 0.6667
+    "ordinary": 0.875,
+    "exact": 0.5,
+    "version": 1.0,
+    "injection": 1.0
   },
-  "n_questions": 8
+  "n_questions": 15
 }
