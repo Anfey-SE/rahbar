@@ -23,6 +23,8 @@ _SYSTEM = (
     "set answered_from_context to false, citations to an empty list, and confidence to low.\n"
     "When answering, include precise citations matching source, section, and page of "
     "the supporting passage.\n"
+    "In citations, you MUST copy the exact filename string from 'source=...' into the citation "
+    "'source' field (e.g. 'academic-rules-handbook-jun-2026.pdf'), NOT a title or description.\n"
     "Never fabricate citations."
 )
 
@@ -102,6 +104,7 @@ class OllamaProvider:
                 )
 
                 content = raw.get("message", {}).get("content", "")
+                log.info("ollama raw content", extra={"content": content})
                 data = json.loads(content)
                 return Answer.model_validate(data)
             except Exception as exc:
