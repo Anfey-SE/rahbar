@@ -34,6 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          set -o pipefail
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | sudo tar xz -C /usr/local/bin kubeconform
           kubectl kustomize k8s/overlays/prod | kubeconform -strict -ignore-missing-schemas -summary
   build:
