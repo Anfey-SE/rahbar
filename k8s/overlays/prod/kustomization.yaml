@@ -5,5 +5,3 @@ namespace: rahbar
 
 resources:
   - ../../base
-  - hpa.yaml
-  - networkpolicy.yaml
