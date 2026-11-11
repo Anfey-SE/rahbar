@@ -35,6 +35,7 @@ class Settings:
     # Which implementations to load. "stub" needs no cluster, no model, no network.
     retriever: str = "stub"          # RETRIEVER: stub | chroma
     llm_provider: str = "stub"       # LLM_PROVIDER: stub | ollama-host | ollama-incluster | hosted
+    embed_provider: str = "ollama"   # EMBED_PROVIDER: ollama | hash
 
     # The embedding pin (section 4.4). The indexer reads the same ConfigMap key.
     embed_model: str = "nomic-embed-text"
@@ -63,10 +64,13 @@ class Settings:
 
 
 def get_settings() -> Settings:
+    embed_provider = os.environ.get("EMBED_PROVIDER", "ollama")
+    default_model = "hash-768" if embed_provider == "hash" else "nomic-embed-text"
     return Settings(
         retriever=os.environ.get("RETRIEVER", "stub"),
         llm_provider=os.environ.get("LLM_PROVIDER", "stub"),
-        embed_model=os.environ.get("EMBED_MODEL", "nomic-embed-text"),
+        embed_provider=embed_provider,
+        embed_model=os.environ.get("EMBED_MODEL", default_model),
         chroma_host=os.environ.get("CHROMA_HOST", "chroma"),
         chroma_port=_int("CHROMA_PORT", 8000),
         collection=os.environ.get("CHROMA_COLLECTION", "rahbar"),

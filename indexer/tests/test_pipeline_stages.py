@@ -238,3 +238,50 @@ def test_store_upserts_prunes_and_updates_metadata() -> None:
     assert meta["dimension"] == 768
     assert "index_version" in meta
     assert isinstance(meta["index_version"], str)
+
+
+def test_hash_embed_deterministic_and_normalized() -> None:
+    from pipeline.embed import hash_embed
+
+    v1 = hash_embed("Attendance is mandatory for all students.")
+    v2 = hash_embed("Attendance is mandatory for all students.")
+    v3 = hash_embed("Hostel accommodation rules and fees.")
+
+    # 1. Dimension is 768
+    assert len(v1) == 768
+    assert len(v2) == 768
+    assert len(v3) == 768
+
+    # 2. Determinism: same input produces identical vector
+    assert v1 == v2
+
+    # 3. L2 normalized: sum of squares ≈ 1.0
+    import math
+
+    norm1 = math.sqrt(sum(x * x for x in v1))
+    norm3 = math.sqrt(sum(x * x for x in v3))
+    assert abs(norm1 - 1.0) < 1e-5
+    assert abs(norm3 - 1.0) < 1e-5
+
+    # 4. Semantic separation: unrelated text produces distinct vector
+    assert v1 != v3
+
+
+def test_embed_stage_with_hash_provider_no_network() -> None:
+    settings = IndexerSettings(
+        embed_model="hash-768",
+        chroma_host="localhost",
+        chroma_port=8000,
+        collection="test-hash",
+        corpus_dir="/tmp/corpus",
+        chunk_size=100,
+        chunk_overlap=20,
+        ollama_url="http://non-existent:11434",
+        embed_provider="hash",
+    )
+    texts = ["First chunk text", "Second chunk text"]
+    # Must succeed with zero network calls despite bogus ollama_url
+    vecs = embed(texts, settings)
+    assert len(vecs) == 2
+    assert len(vecs[0]) == 768
+    assert len(vecs[1]) == 768
