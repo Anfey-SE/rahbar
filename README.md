@@ -21,7 +21,7 @@ graph LR
 
 ```bash
 # 1. Start minikube
-minikube start --driver=docker
+minikube start --driver=docker --cni=calico --memory=4096 --cpus=4
 
 # 2. Enable ingress
 minikube addons enable ingress
@@ -94,7 +94,7 @@ The indexer is a one-shot Kubernetes Job (`k8s/base/indexer-job.yaml`). A weekly
 
 ```bash
 # minikube (Windows/WSL)
-minikube start --driver=docker --memory=4096
+minikube start --driver=docker --cni=calico --memory=4096 --cpus=4
 minikube addons enable ingress
 minikube tunnel   # in a separate terminal (for Ingress on port 80)
 ```
