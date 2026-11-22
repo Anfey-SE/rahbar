@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+from typing import Any
 
 from pipeline.config import get_settings
 from pipeline.dummy import DUMMY_DIM, DUMMY_MODEL, fake_vector, write_dummy_index
@@ -13,7 +14,8 @@ from pipeline.run import discover
 
 class FakeCollection:
     def __init__(self, name: str, metadata: dict) -> None:
-        self.name, self.metadata, self.rows = name, metadata, {}
+        self.name, self.metadata = name, metadata
+        self.rows: dict[str, Any] = {}
 
     def add(self, ids, documents, embeddings, metadatas) -> None:
         for i, d, e, m in zip(ids, documents, embeddings, metadatas):
@@ -45,7 +47,10 @@ def test_dummy_index_writes_three_chunks_and_records_the_model() -> None:
     assert col.metadata["dimension"] == DUMMY_DIM
     for _doc, vector, meta in col.rows.values():
         assert len(vector) == DUMMY_DIM
-        assert set(meta) == {"source", "section", "page", "doc_version", "superseded"}
+        assert set(meta) == {
+            "source", "section", "page", "doc_version", "superseded",
+            "doc_id", "doc_hash", "title", "page_count", "status",
+        }
 
 
 def test_dummy_index_can_run_twice() -> None:
