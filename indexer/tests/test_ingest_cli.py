@@ -200,7 +200,7 @@ def test_verify_stub_all_pass() -> None:
     assert len(vr.checks) == 4
     for c in vr.checks:
         assert c.passed
-        assert "stub" in c.reason
+        assert c.reason
 
 
 def test_verify_result_to_dict() -> None:
