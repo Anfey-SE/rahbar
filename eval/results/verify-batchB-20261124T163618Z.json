@@ -1,0 +1,693 @@
+{
+  "timestamp": "20261124T163618Z",
+  "results": [
+    {
+      "source": "b01_ai_policy.md",
+      "file": "b01_ai_policy.md",
+      "doc_id": "46e32f15eaa34a8f",
+      "doc_hash": "98fa2e5363c78ce7bc82f3cfc5992b76d6f74ea558b6c115ade46e892b2bd078",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1274.0,
+            "alpha_ratio": 0.974,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b01_ai_policy.md",
+            "title": "Generative Artificial Intelligence Policy",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "generative artificial intelligence policy"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.854,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "accepted",
+      "actions": [
+        "indexed"
+      ]
+    },
+    {
+      "source": "b02_grade_points.md",
+      "file": "b02_grade_points.md",
+      "doc_id": "234db1a5f23dc7ab",
+      "doc_hash": "b339d06583eb2fa5c8105bc6829b720049dbc5cadc084108c7a46986ad4dd7e5",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1020.0,
+            "alpha_ratio": 0.946,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b02_grade_points.md",
+            "title": "Grading System and Academic Warning",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "grading system and academic warning"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.806,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "accepted",
+      "actions": [
+        "indexed"
+      ]
+    },
+    {
+      "source": "b03_course_withdrawal.md",
+      "file": "b03_course_withdrawal.md",
+      "doc_id": "c6b531d56ec0bc0f",
+      "doc_hash": "87687dfb79f42e6a787b03e6fff282d7ea41ef8a5bf2c25d31441c9edd8f7596",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1013.0,
+            "alpha_ratio": 0.966,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b03_course_withdrawal.md",
+            "title": "Course Withdrawal Regulations",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "course withdrawal regulations"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.817,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "accepted",
+      "actions": [
+        "indexed"
+      ]
+    },
+    {
+      "source": "b04_exact_dup_b01.md",
+      "file": "b04_exact_dup_b01.md",
+      "doc_id": "7be642223ccd865e",
+      "doc_hash": "98fa2e5363c78ce7bc82f3cfc5992b76d6f74ea558b6c115ade46e892b2bd078",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1274.0,
+            "alpha_ratio": 0.974,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b04_exact_dup_b01.md",
+            "title": "Generative Artificial Intelligence Policy",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "generative artificial intelligence policy"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "exact duplicate of 46e32f15eaa34a8f",
+          "details": {
+            "exact_duplicate_of": "46e32f15eaa34a8f",
+            "match_type": "file_hash"
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b05_exact_dup_b02.md",
+      "file": "b05_exact_dup_b02.md",
+      "doc_id": "c67e91df99553987",
+      "doc_hash": "b339d06583eb2fa5c8105bc6829b720049dbc5cadc084108c7a46986ad4dd7e5",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1020.0,
+            "alpha_ratio": 0.946,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b05_exact_dup_b02.md",
+            "title": "Grading System and Academic Warning",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "grading system and academic warning"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "exact duplicate of 234db1a5f23dc7ab",
+          "details": {
+            "exact_duplicate_of": "234db1a5f23dc7ab",
+            "match_type": "file_hash"
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b06_near_dup_b03.md",
+      "file": "b06_near_dup_b03.md",
+      "doc_id": "22d1f3c1ac52b65b",
+      "doc_hash": "a686f38219080e46ac1743287db83966b9fc5250588874aa38cc4e4be1772493",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 995.0,
+            "alpha_ratio": 0.96,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b06_near_dup_b03.md",
+            "title": "Course Withdrawal Regulations",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "course withdrawal regulations"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "near-duplicate of c6b531d56ec0bc0f, similarity 0.981",
+          "details": {
+            "duplicate_of": "c6b531d56ec0bc0f",
+            "similarity": 0.981,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b07_truncated_doc.md",
+      "file": "b07_truncated_doc.md",
+      "doc_id": "47417dadf44a27cc",
+      "doc_hash": "ade7b8d55113cd59ab609269acbf83bd77a3ddfd8a72d73098a4f2760264f605",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 913.0,
+            "alpha_ratio": 0.974,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": false,
+          "pass": false,
+          "reason": "document is truncated: final paragraph stops mid-sentence",
+          "details": {
+            "last_character": "n",
+            "last_snippet": "nistrative processes, and adaptive learn"
+          }
+        },
+        {
+          "name": "recency",
+          "passed": false,
+          "pass": false,
+          "reason": "recency check skipped due to missing title or version",
+          "details": {
+            "skipped": true
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "details": {
+            "skipped": true
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b08_corrupt_file.pdf",
+      "file": "b08_corrupt_file.pdf",
+      "doc_id": "513c1fd273a401f2",
+      "doc_hash": "97de38731ed7708d6943f9ba9653d4eee8604f3d5fb705454368d5ff7cb617e3",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": false,
+          "pass": false,
+          "reason": "extraction failed: No /Root object! - Is this really a PDF?",
+          "details": {
+            "error": "No /Root object! - Is this really a PDF?"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": false,
+          "pass": false,
+          "reason": "cannot parse document (corrupt): No /Root object! - Is this really a PDF?",
+          "details": {
+            "error": "No /Root object! - Is this really a PDF?"
+          }
+        },
+        {
+          "name": "recency",
+          "passed": false,
+          "pass": false,
+          "reason": "recency check skipped due to missing title or version",
+          "details": {
+            "skipped": true
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "details": {
+            "skipped": true
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b09_missing_metadata.md",
+      "file": "b09_missing_metadata.md",
+      "doc_id": "92b3b58a17aaf3d6",
+      "doc_hash": "94c547daf8f7824f410ddbd19cc0fb1b54af329ba1943c46f8c843ae42032d5a",
+      "passed": false,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 304.0,
+            "alpha_ratio": 0.988,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": false,
+          "pass": false,
+          "reason": "missing required metadata: date/version",
+          "details": {
+            "missing": "date/version"
+          }
+        },
+        {
+          "name": "recency",
+          "passed": false,
+          "pass": false,
+          "reason": "recency check skipped due to missing title or version",
+          "details": {
+            "skipped": true
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": false,
+          "pass": false,
+          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "details": {
+            "skipped": true
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "quarantined",
+      "actions": [
+        "quarantined"
+      ]
+    },
+    {
+      "source": "b10_academic_rules_v2.md",
+      "file": "b10_academic_rules_v2.md",
+      "doc_id": "7fedb9430787e461",
+      "doc_hash": "e5602a136ddbbfac20d1435e416eaa1cda9e51f8ed9a6bcc916ce24d5fd97ed0",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1114.0,
+            "alpha_ratio": 0.963,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b10_academic_rules_v2.md",
+            "title": "Academic Rules Handbook",
+            "doc_version": "2026-12",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "newer version than existing active document(s): eda46c98f28fe859",
+          "details": {
+            "supersedes": [
+              "eda46c98f28fe859"
+            ],
+            "incoming_version": "2026-12"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.917,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "accepted",
+      "actions": [
+        "indexed",
+        "archived_prior:eda46c98f28fe859"
+      ]
+    },
+    {
+      "source": "b11_prompt_injection.md",
+      "file": "b11_prompt_injection.md",
+      "doc_id": "1e1b981eec01479d",
+      "doc_hash": "5c16cc566d7ef32711d3df7b20ba0fd4deb8efb8424068fbb5ada96263db9927",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 570.0,
+            "alpha_ratio": 0.969,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b11_prompt_injection.md",
+            "title": "Student Attendance Policy",
+            "doc_version": "2026-06",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "student attendance policy"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.844,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [
+        "possible prompt injection detected: 'Ignore all previous instructions'"
+      ],
+      "decision": "accepted",
+      "actions": [
+        "indexed"
+      ]
+    },
+    {
+      "source": "b12_uncovered_topic.md",
+      "file": "b12_uncovered_topic.md",
+      "doc_id": "2e801d3502a922bd",
+      "doc_hash": "768b4acc0afda733e9b5cd46bfc0a7cc906bc4076886604a54940c1ad73554e4",
+      "passed": true,
+      "checks": [
+        {
+          "name": "quality",
+          "passed": true,
+          "pass": true,
+          "reason": "quality checks passed",
+          "details": {
+            "avg_chars_per_page": 1086.0,
+            "alpha_ratio": 0.973,
+            "replacement_chars": 0,
+            "ocr_confidence_checked": false,
+            "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated"
+          }
+        },
+        {
+          "name": "completeness",
+          "passed": true,
+          "pass": true,
+          "reason": "completeness checks passed",
+          "details": {
+            "source": "b12_uncovered_topic.md",
+            "title": "Faculty Startups and IP Revenue Sharing",
+            "doc_version": "2022-05",
+            "page_count": 1
+          }
+        },
+        {
+          "name": "recency",
+          "passed": true,
+          "pass": true,
+          "reason": "no prior version detected",
+          "details": {
+            "logical_key": "faculty startups and ip revenue sharing"
+          }
+        },
+        {
+          "name": "uniqueness",
+          "passed": true,
+          "pass": true,
+          "reason": "document is unique",
+          "details": {
+            "max_similarity": 0.855,
+            "threshold": 0.95
+          }
+        }
+      ],
+      "warnings": [],
+      "decision": "accepted",
+      "actions": [
+        "indexed"
+      ]
+    }
+  ]
+}

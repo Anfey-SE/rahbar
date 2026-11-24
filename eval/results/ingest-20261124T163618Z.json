@@ -1,0 +1,13 @@
+{
+  "documents_seen": 12,
+  "documents_passed": 6,
+  "documents_quarantined": 6,
+  "chunks_embedded": 6,
+  "chunks_skipped": 0,
+  "chunks_deleted": 0,
+  "documents_archived": 1,
+  "verification_report": "../data-local/reports/verify-20261124T163618Z.json",
+  "timestamp": "20261124T163618Z",
+  "collection": "ragops_demo",
+  "embed_model": "nomic-embed-text"
+}
