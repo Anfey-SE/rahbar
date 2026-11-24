@@ -47,6 +47,8 @@ spec:
                   name: rahbar-secret
                   key: LLM_API_KEY
                   optional: true
+            - name: TRACE_LOG_PATH
+              value: /tmp/traces/traces.jsonl
           resources:
             requests:
               cpu: 100m
@@ -85,6 +87,11 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: traces
+              mountPath: /tmp/traces
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: traces
+          persistentVolumeClaim:
+            claimName: traces-pvc

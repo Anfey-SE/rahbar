@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ingestion-cronjob
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ingestion-cronjob
+    app.kubernetes.io/part-of: rahbar
+spec:
+  schedule: "0 2 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: ingestion-cronjob
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: indexer-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+          containers:
+            - name: indexer
+              image: rahbar-indexer:dev
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: rahbar-config
+              env:
+                - name: DATA_LAKE_PATH
+                  value: /data/lake
+                - name: QUARANTINE_PATH
+                  value: /data/quarantine
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: 1000m
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: datalake
+                  mountPath: /data/lake
+                - name: quarantine
+                  mountPath: /data/quarantine
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: datalake
+              persistentVolumeClaim:
+                claimName: datalake-pvc
+            - name: quarantine
+              persistentVolumeClaim:
+                claimName: quarantine-pvc
+            - name: tmp
+              emptyDir: {}

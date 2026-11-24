@@ -21,3 +21,13 @@ resources:
   - ingress.yaml
   - hpa.yaml
   - networkpolicy.yaml
+  # A03: data-lake PVCs
+  - datalake-pvc.yaml
+  - quarantine-pvc.yaml
+  - archive-pvc.yaml
+  - traces-pvc.yaml
+  # A03: release-gate thresholds
+  - gate-configmap.yaml
+  # A03: candidate deployment for controlled rollout
+  - api-candidate-deployment.yaml
+  - api-candidate-service.yaml

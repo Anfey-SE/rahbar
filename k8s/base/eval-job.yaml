@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-job
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: eval-job
+    app.kubernetes.io/part-of: rahbar
+    rahbar/role: eval
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: eval-job
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: eval
+          image: rahbar-api:dev
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - >-
+              python -m pytest eval/ -v --tb=short &&
+              python scripts/release_gate.py
+              --config /etc/gate/thresholds.yaml
+              --results /data/results/latest.json
+          envFrom:
+            - configMapRef:
+                name: rahbar-config
+          env:
+            - name: EVAL_API_URL
+              value: "http://api:8000"
+            - name: RESULTS_PATH
+              value: /data/results
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: gate-config
+              mountPath: /etc/gate
+              readOnly: true
+            - name: results
+              mountPath: /data/results
+            - name: datalake
+              mountPath: /data/lake
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: gate-config
+          configMap:
+            name: gate-thresholds
+        - name: results
+          emptyDir: {}
+        - name: datalake
+          persistentVolumeClaim:
+            claimName: datalake-pvc
+            readOnly: true
+        - name: tmp
+          emptyDir: {}
