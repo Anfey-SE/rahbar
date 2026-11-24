@@ -313,13 +313,13 @@ def compute_doc_vector(samples: list[str], settings: IndexerSettings) -> list[fl
     return mean_vec
 
 
-def cosine_similarity(v1: list[float], v2: list[float]) -> float:
+def cosine_similarity(v1: Any, v2: Any) -> float:
     """Cosine similarity of two vectors."""
-    if not v1 or not v2 or len(v1) != len(v2):
+    if v1 is None or v2 is None or len(v1) == 0 or len(v2) == 0 or len(v1) != len(v2):
         return 0.0
-    dot = sum(a * b for a, b in zip(v1, v2))
-    norm1 = math.sqrt(sum(a * a for a in v1))
-    norm2 = math.sqrt(sum(b * b for b in v2))
+    dot = float(sum(a * b for a, b in zip(v1, v2)))
+    norm1 = math.sqrt(float(sum(a * a for a in v1)))
+    norm2 = math.sqrt(float(sum(b * b for b in v2)))
     if norm1 > 1e-9 and norm2 > 1e-9:
         return dot / (norm1 * norm2)
     return dot
@@ -598,7 +598,7 @@ def check_uniqueness(
     # 3. Near-duplicate by embedding similarity among ACTIVE documents
     max_sim = 0.0
     near_dup_doc_id = None
-    if doc_vec and existing_docs:
+    if doc_vec is not None and len(doc_vec) > 0 and len(existing_docs) > 0:
         for ex in existing_docs:
             ex_id = ex.get("doc_id", "")
             if ex_id == doc_id:
@@ -606,7 +606,7 @@ def check_uniqueness(
             if ex.get("status") == "archived":
                 continue
             ex_vec = ex.get("embedding")
-            if not ex_vec:
+            if ex_vec is None or len(ex_vec) == 0:
                 continue
             sim = cosine_similarity(doc_vec, ex_vec)
             if sim > max_sim:

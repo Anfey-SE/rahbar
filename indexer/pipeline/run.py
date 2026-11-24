@@ -409,7 +409,12 @@ def run_ingest(
         d_ids = d_res.get("ids", [])
         d_metas = d_res.get("metadatas", [])
         d_embs = d_res.get("embeddings", [])
-        for did, meta, emb in zip(d_ids, d_metas, d_embs if d_embs is not None else [None] * len(d_ids)):
+        emb_list = (
+            [e.tolist() if hasattr(e, "tolist") else e for e in d_embs]
+            if d_embs is not None
+            else [None] * len(d_ids)
+        )
+        for did, meta, emb in zip(d_ids, d_metas, emb_list):
             st = str(meta.get("status", "active"))
             d_dict = {
                 "doc_id": did,
@@ -637,7 +642,7 @@ def run_ingest(
             "status": status,
             "norm_text_hash": norm_text_h,
         }
-        if doc_vec:
+        if doc_vec is not None and len(doc_vec) > 0:
             docs_collection.upsert(
                 ids=[doc_id],
                 embeddings=[doc_vec],
