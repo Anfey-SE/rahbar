@@ -46,14 +46,18 @@ spec:
           env:
             - name: CHROMA_COLLECTION
               value: rahbar-candidate
-            - name: TRACE_LOG_PATH
-              value: /tmp/traces/traces.jsonl
             - name: LLM_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: rahbar-secret
                   key: LLM_API_KEY
                   optional: true
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: TRACE_LOG_PATH
+              value: /data/traces/trace-$(POD_NAME).jsonl
           resources:
             requests:
               cpu: 100m
@@ -92,11 +96,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-            - name: traces
-              mountPath: /tmp/traces
+            - name: data
+              mountPath: /data/traces
+              subPath: traces
       volumes:
         - name: tmp
           emptyDir: {}
-        - name: traces
+        - name: data
           persistentVolumeClaim:
-            claimName: traces-pvc
+            claimName: rahbar-data

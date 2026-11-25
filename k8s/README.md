@@ -1,6 +1,6 @@
 # RAHBAR Kubernetes Deployment Guide
 
-> Assignment 03 — Part F | CS4032 RAGOps  
+> Assignment 03 — Part F | CS4032 RAGOps
 > All commands run against **minikube**. Namespace: `rahbar`.
 
 ---
@@ -25,7 +25,7 @@ docker build -t rahbar-ui:dev  -f ui/Dockerfile .
 ## 1. First-time Deployment (from scratch)
 
 ```bash
-# Apply the full base stack (namespace, ConfigMap, PVCs, Deployments, Services, StatefulSet)
+# Apply the full base stack (namespace, ConfigMap, PVC, Deployments, Services, StatefulSet)
 kubectl apply -k k8s/base/
 
 # Wait for the API to be ready
@@ -37,17 +37,18 @@ kubectl -n rahbar get pods
 
 ---
 
-## 2. F1 — Data Lake PVCs
+## 2. F1 — Shared Data Volume
 
-| PVC | Size | Mount path | Purpose |
-|-----|------|-----------|---------|
-| `datalake-pvc` | 10 Gi | `/data/lake` | Raw PDFs + manifests |
-| `quarantine-pvc` | 2 Gi | `/data/quarantine` | Documents that failed verification |
-| `archive-pvc` | 5 Gi | `/data/archive` | Versioned snapshot archives |
-| `traces-pvc` | 2 Gi | `/tmp/traces` | Trace JSONL log files |
+A single PVC `rahbar-data` (2 Gi, `ReadWriteOnce`) is mounted by all workloads:
+
+| Workload | Mount path | subPath | Purpose |
+|----------|-----------|---------|---------|
+| `api`, `api-candidate` | `/data/traces` | `traces` | Per-pod trace JSONL files |
+| `ingest` Job / CronJob | `/data` | *(whole volume)* | Inbox, quarantine, archive, manifests |
+| `eval-job` | `/data` | *(whole volume)* | Writes results to `/data/results` |
 
 ```bash
-kubectl -n rahbar get pvc
+kubectl -n rahbar get pvc rahbar-data
 ```
 
 ---
@@ -57,14 +58,13 @@ kubectl -n rahbar get pvc
 ### One-shot ingestion (re-index now)
 ```bash
 kubectl -n rahbar apply -f k8s/base/ingestion-job.yaml
-kubectl -n rahbar wait --for=condition=complete job/ingestion-job --timeout=300s
-kubectl -n rahbar logs job/ingestion-job
+kubectl -n rahbar wait --for=condition=complete job/ingest --timeout=300s
+kubectl -n rahbar logs job/ingest
 ```
 
 ### Scheduled ingestion (every Sunday 02:00 UTC)
 ```bash
-# CronJob is included in the base kustomization; check its status:
-kubectl -n rahbar get cronjob ingestion-cronjob
+kubectl -n rahbar get cronjob ingest-cron
 ```
 
 ### Eval Job + Release Gate (F2 / C2)
@@ -96,13 +96,6 @@ kubectl -n rahbar rollout status deployment/api-candidate
 
 The candidate runs against its **own collection** (`rahbar-candidate`) and its **own Service** (`api-candidate:8000`).
 
-### Run eval against the candidate
-```bash
-# Point the eval job at the candidate service
-kubectl -n rahbar set env job/eval-job EVAL_API_URL=http://api-candidate:8000 --dry-run=client
-# Or edit the eval-job.yaml EVAL_API_URL and re-apply
-```
-
 ### Gate PASS → rolling update live Deployment
 ```bash
 # If eval-job exits 0 (gate pass), promote candidate image to live:
@@ -132,27 +125,28 @@ kubectl -n rahbar logs -l app.kubernetes.io/name=api --tail=5 | grep collection_
 
 ## 5. F4 — Trace Observability on Cluster
 
+Each API pod writes traces to its own file via the downward API:
+`TRACE_LOG_PATH=/data/traces/trace-$(POD_NAME).jsonl`
+
 ```bash
 # Traces written to stdout (picked up by kubectl logs)
 kubectl -n rahbar logs -l app.kubernetes.io/name=api --tail=20 | python -m json.tool
 
-# Traces written to PVC file (open a shell into the pod)
-kubectl -n rahbar exec -it deployment/api -- cat /tmp/traces/traces.jsonl | tail -5
+# List trace files on the PVC
+kubectl -n rahbar exec deployment/api -- ls /data/traces/
 
 # Use the trace tool to reconstruct a specific query
-kubectl -n rahbar exec -it deployment/api -- \
+kubectl -n rahbar exec deployment/api -- \
     python -m api.app.traces.tool <trace_id>
 
 # Metrics summary (last 1 hour)
-kubectl -n rahbar exec -it deployment/api -- \
+kubectl -n rahbar exec deployment/api -- \
     python -m api.app.traces.summary --window 1h
 ```
 
 ---
 
-## 5. F5 — Resource Tuning
-
-Resource limits were set based on `kubectl top` measurements during load:
+## 6. F5 — Resource Tuning
 
 | Workload | CPU request | CPU limit | Memory request | Memory limit |
 |----------|-------------|-----------|----------------|--------------|
@@ -160,13 +154,22 @@ Resource limits were set based on `kubectl top` measurements during load:
 | `api-candidate` | 100m | 500m | 256Mi | 512Mi |
 | `chroma` | 200m | 1000m | 512Mi | 1Gi |
 | `redis` | 50m | 200m | 128Mi | 256Mi |
-| `ingestion-job` | 200m | 1000m | 512Mi | 1Gi |
+| `ingest` Job | 200m | 1000m | 512Mi | 1Gi |
 | `eval-job` | 200m | 1000m | 512Mi | 1Gi |
 
 ```bash
 # Live resource usage
 kubectl -n rahbar top pods
 kubectl -n rahbar top nodes
+```
+
+---
+
+## Validation
+
+```bash
+# Dry-run kustomize to verify all manifests render correctly
+kubectl kustomize k8s/overlays/dev
 ```
 
 ---

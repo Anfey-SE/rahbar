@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: ingestion-cronjob
+  name: ingest-cron
   namespace: rahbar
   labels:
-    app.kubernetes.io/name: ingestion-cronjob
+    app.kubernetes.io/name: ingest-cron
     app.kubernetes.io/part-of: rahbar
 spec:
   schedule: "0 2 * * 0"
@@ -17,27 +17,35 @@ spec:
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: ingestion-cronjob
+            app.kubernetes.io/name: ingest-cron
         spec:
           restartPolicy: OnFailure
           serviceAccountName: indexer-sa
+          enableServiceLinks: false
           securityContext:
             runAsNonRoot: true
             runAsUser: 10001
             runAsGroup: 10001
             fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: indexer
               image: rahbar-indexer:dev
               imagePullPolicy: IfNotPresent
+              args:
+                - python
+                - -m
+                - pipeline.run
+                - --input
+                - /data/inbox
+                - --data-dir
+                - /data
+                - --collection
+                - rahbar
               envFrom:
                 - configMapRef:
                     name: rahbar-config
-              env:
-                - name: DATA_LAKE_PATH
-                  value: /data/lake
-                - name: QUARANTINE_PATH
-                  value: /data/quarantine
               resources:
                 requests:
                   cpu: 200m
@@ -52,18 +60,13 @@ spec:
                   drop:
                     - ALL
               volumeMounts:
-                - name: datalake
-                  mountPath: /data/lake
-                - name: quarantine
-                  mountPath: /data/quarantine
+                - name: data
+                  mountPath: /data
                 - name: tmp
                   mountPath: /tmp
           volumes:
-            - name: datalake
+            - name: data
               persistentVolumeClaim:
-                claimName: datalake-pvc
-            - name: quarantine
-              persistentVolumeClaim:
-                claimName: quarantine-pvc
+                claimName: rahbar-data
             - name: tmp
               emptyDir: {}

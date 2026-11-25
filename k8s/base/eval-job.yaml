@@ -16,11 +16,14 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: api-sa
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
         fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: eval
           image: rahbar-api:dev
@@ -29,18 +32,17 @@ spec:
             - /bin/sh
             - -c
             - >-
-              python -m pytest eval/ -v --tb=short &&
+              python -m eval.suite
+              --golden eval/golden.jsonl
+              --api http://api
+              --collection rahbar
+              --out /data/results &&
               python scripts/release_gate.py
               --config /etc/gate/thresholds.yaml
               --results /data/results/latest.json
           envFrom:
             - configMapRef:
                 name: rahbar-config
-          env:
-            - name: EVAL_API_URL
-              value: "http://api:8000"
-            - name: RESULTS_PATH
-              value: /data/results
           resources:
             requests:
               cpu: 200m
@@ -50,7 +52,7 @@ spec:
               memory: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -58,22 +60,16 @@ spec:
             - name: gate-config
               mountPath: /etc/gate
               readOnly: true
-            - name: results
-              mountPath: /data/results
-            - name: datalake
-              mountPath: /data/lake
-              readOnly: true
+            - name: data
+              mountPath: /data
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: gate-config
           configMap:
             name: gate-thresholds
-        - name: results
-          emptyDir: {}
-        - name: datalake
+        - name: data
           persistentVolumeClaim:
-            claimName: datalake-pvc
-            readOnly: true
+            claimName: rahbar-data
         - name: tmp
           emptyDir: {}
