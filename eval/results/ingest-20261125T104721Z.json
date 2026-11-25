@@ -6,8 +6,8 @@
   "chunks_skipped": 0,
   "chunks_deleted": 0,
   "documents_archived": 1,
-  "verification_report": "../data-local/reports/verify-20261124T163618Z.json",
-  "timestamp": "20261124T163618Z",
+  "verification_report": "../data-local/reports/verify-20261125T104721Z.json",
+  "timestamp": "20261125T104721Z",
   "collection": "ragops_demo",
   "embed_model": "nomic-embed-text"
 }

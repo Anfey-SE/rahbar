@@ -1,17 +1,18 @@
 {
-  "timestamp": "20261124T163618Z",
+  "timestamp": "20261125T104721Z",
   "results": [
     {
       "source": "b01_ai_policy.md",
       "file": "b01_ai_policy.md",
       "doc_id": "46e32f15eaa34a8f",
-      "doc_hash": "98fa2e5363c78ce7bc82f3cfc5992b76d6f74ea558b6c115ade46e892b2bd078",
+      "doc_hash": "9acb352cbed44cb88a04b00592f4d7983ca84ea9c7d9645eba6dddb582d04b12",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1274.0,
@@ -25,6 +26,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b01_ai_policy.md",
@@ -37,6 +39,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "generative artificial intelligence policy"
@@ -46,6 +49,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.854,
@@ -63,13 +67,14 @@
       "source": "b02_grade_points.md",
       "file": "b02_grade_points.md",
       "doc_id": "234db1a5f23dc7ab",
-      "doc_hash": "b339d06583eb2fa5c8105bc6829b720049dbc5cadc084108c7a46986ad4dd7e5",
+      "doc_hash": "fd1073688f0a5e3f774f78353e85b8e62ffe094b7ced6becb0572cec7a94633c",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1020.0,
@@ -83,6 +88,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b02_grade_points.md",
@@ -95,6 +101,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "grading system and academic warning"
@@ -104,6 +111,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.806,
@@ -121,13 +129,14 @@
       "source": "b03_course_withdrawal.md",
       "file": "b03_course_withdrawal.md",
       "doc_id": "c6b531d56ec0bc0f",
-      "doc_hash": "87687dfb79f42e6a787b03e6fff282d7ea41ef8a5bf2c25d31441c9edd8f7596",
+      "doc_hash": "dd159fc8550362aaf951934fc59d991f915ad0493f804edfb4808cfefcb2f2f9",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1013.0,
@@ -141,6 +150,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b03_course_withdrawal.md",
@@ -153,6 +163,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "course withdrawal regulations"
@@ -162,6 +173,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.817,
@@ -179,13 +191,14 @@
       "source": "b04_exact_dup_b01.md",
       "file": "b04_exact_dup_b01.md",
       "doc_id": "7be642223ccd865e",
-      "doc_hash": "98fa2e5363c78ce7bc82f3cfc5992b76d6f74ea558b6c115ade46e892b2bd078",
+      "doc_hash": "9acb352cbed44cb88a04b00592f4d7983ca84ea9c7d9645eba6dddb582d04b12",
       "passed": false,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1274.0,
@@ -199,6 +212,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b04_exact_dup_b01.md",
@@ -211,6 +225,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "generative artificial intelligence policy"
@@ -220,6 +235,7 @@
           "name": "uniqueness",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "exact duplicate of 46e32f15eaa34a8f",
           "details": {
             "exact_duplicate_of": "46e32f15eaa34a8f",
@@ -237,13 +253,14 @@
       "source": "b05_exact_dup_b02.md",
       "file": "b05_exact_dup_b02.md",
       "doc_id": "c67e91df99553987",
-      "doc_hash": "b339d06583eb2fa5c8105bc6829b720049dbc5cadc084108c7a46986ad4dd7e5",
+      "doc_hash": "fd1073688f0a5e3f774f78353e85b8e62ffe094b7ced6becb0572cec7a94633c",
       "passed": false,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1020.0,
@@ -257,6 +274,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b05_exact_dup_b02.md",
@@ -269,6 +287,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "grading system and academic warning"
@@ -278,6 +297,7 @@
           "name": "uniqueness",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "exact duplicate of 234db1a5f23dc7ab",
           "details": {
             "exact_duplicate_of": "234db1a5f23dc7ab",
@@ -295,13 +315,14 @@
       "source": "b06_near_dup_b03.md",
       "file": "b06_near_dup_b03.md",
       "doc_id": "22d1f3c1ac52b65b",
-      "doc_hash": "a686f38219080e46ac1743287db83966b9fc5250588874aa38cc4e4be1772493",
+      "doc_hash": "da63ded2b4c8c27c04942c420aed6101d9cf49dd1712a33b8c28f1b58da35b34",
       "passed": false,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 995.0,
@@ -315,6 +336,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b06_near_dup_b03.md",
@@ -327,6 +349,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "course withdrawal regulations"
@@ -336,6 +359,7 @@
           "name": "uniqueness",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "near-duplicate of c6b531d56ec0bc0f, similarity 0.981",
           "details": {
             "duplicate_of": "c6b531d56ec0bc0f",
@@ -354,13 +378,14 @@
       "source": "b07_truncated_doc.md",
       "file": "b07_truncated_doc.md",
       "doc_id": "47417dadf44a27cc",
-      "doc_hash": "ade7b8d55113cd59ab609269acbf83bd77a3ddfd8a72d73098a4f2760264f605",
+      "doc_hash": "11002084c51d13a1df42b6d11e1b3eefa7e3929c1bace6fd6f269c1b2c3d2396",
       "passed": false,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 913.0,
@@ -374,6 +399,7 @@
           "name": "completeness",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "document is truncated: final paragraph stops mid-sentence",
           "details": {
             "last_character": "n",
@@ -382,20 +408,24 @@
         },
         {
           "name": "recency",
-          "passed": false,
-          "pass": false,
-          "reason": "recency check skipped due to missing title or version",
+          "passed": true,
+          "pass": true,
+          "status": "pass",
+          "reason": "no prior version detected",
           "details": {
-            "skipped": true
+            "logical_key": "generative artificial intelligence framework"
           }
         },
         {
           "name": "uniqueness",
           "passed": false,
           "pass": false,
-          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "status": "fail",
+          "reason": "near-duplicate of 46e32f15eaa34a8f, similarity 0.965",
           "details": {
-            "skipped": true
+            "duplicate_of": "46e32f15eaa34a8f",
+            "similarity": 0.965,
+            "threshold": 0.95
           }
         }
       ],
@@ -416,6 +446,7 @@
           "name": "quality",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "extraction failed: No /Root object! - Is this really a PDF?",
           "details": {
             "error": "No /Root object! - Is this really a PDF?"
@@ -424,28 +455,34 @@
         {
           "name": "completeness",
           "passed": false,
-          "pass": false,
-          "reason": "cannot parse document (corrupt): No /Root object! - Is this really a PDF?",
+          "pass": null,
+          "status": "skipped",
+          "reason": "not evaluated: extraction failed",
           "details": {
-            "error": "No /Root object! - Is this really a PDF?"
+            "skipped": true,
+            "prerequisite": "quality"
           }
         },
         {
           "name": "recency",
           "passed": false,
-          "pass": false,
-          "reason": "recency check skipped due to missing title or version",
+          "pass": null,
+          "status": "skipped",
+          "reason": "not evaluated: extraction failed",
           "details": {
-            "skipped": true
+            "skipped": true,
+            "prerequisite": "quality"
           }
         },
         {
           "name": "uniqueness",
           "passed": false,
-          "pass": false,
-          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "pass": null,
+          "status": "skipped",
+          "reason": "not evaluated: extraction failed",
           "details": {
-            "skipped": true
+            "skipped": true,
+            "prerequisite": "quality"
           }
         }
       ],
@@ -459,13 +496,14 @@
       "source": "b09_missing_metadata.md",
       "file": "b09_missing_metadata.md",
       "doc_id": "92b3b58a17aaf3d6",
-      "doc_hash": "94c547daf8f7824f410ddbd19cc0fb1b54af329ba1943c46f8c843ae42032d5a",
+      "doc_hash": "c9f2f8e0ac0447eb09409c4998159e111f84e778cef88d1bb28ca222455e9636",
       "passed": false,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 304.0,
@@ -479,6 +517,7 @@
           "name": "completeness",
           "passed": false,
           "pass": false,
+          "status": "fail",
           "reason": "missing required metadata: date/version",
           "details": {
             "missing": "date/version"
@@ -486,20 +525,24 @@
         },
         {
           "name": "recency",
-          "passed": false,
-          "pass": false,
-          "reason": "recency check skipped due to missing title or version",
+          "passed": true,
+          "pass": true,
+          "status": "pass",
+          "reason": "versions cannot be compared (missing date/version)",
           "details": {
-            "skipped": true
+            "note": "incoming document missing comparable version",
+            "logical_key": "this is an unformatted administrative document without any standard front matter header"
           }
         },
         {
           "name": "uniqueness",
-          "passed": false,
-          "pass": false,
-          "reason": "uniqueness check skipped due to prior quality/completeness failure",
+          "passed": true,
+          "pass": true,
+          "status": "pass",
+          "reason": "document is unique",
           "details": {
-            "skipped": true
+            "max_similarity": 0.626,
+            "threshold": 0.95
           }
         }
       ],
@@ -513,13 +556,14 @@
       "source": "b10_academic_rules_v2.md",
       "file": "b10_academic_rules_v2.md",
       "doc_id": "7fedb9430787e461",
-      "doc_hash": "e5602a136ddbbfac20d1435e416eaa1cda9e51f8ed9a6bcc916ce24d5fd97ed0",
+      "doc_hash": "17b37bf82dd3f387c50a56b6c5b95c0bc93e4508289ed07863bfb56e010c6b53",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1114.0,
@@ -533,6 +577,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b10_academic_rules_v2.md",
@@ -545,6 +590,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "newer version than existing active document(s): eda46c98f28fe859",
           "details": {
             "supersedes": [
@@ -557,6 +603,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.917,
@@ -575,13 +622,14 @@
       "source": "b11_prompt_injection.md",
       "file": "b11_prompt_injection.md",
       "doc_id": "1e1b981eec01479d",
-      "doc_hash": "5c16cc566d7ef32711d3df7b20ba0fd4deb8efb8424068fbb5ada96263db9927",
+      "doc_hash": "c1b7d3331265f20dd1fb66649ce252c6c601a746198532158a063f32a6ff334e",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 570.0,
@@ -595,6 +643,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b11_prompt_injection.md",
@@ -607,6 +656,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "student attendance policy"
@@ -616,6 +666,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.844,
@@ -635,13 +686,14 @@
       "source": "b12_uncovered_topic.md",
       "file": "b12_uncovered_topic.md",
       "doc_id": "2e801d3502a922bd",
-      "doc_hash": "768b4acc0afda733e9b5cd46bfc0a7cc906bc4076886604a54940c1ad73554e4",
+      "doc_hash": "83fc7cc2cddd2fc7509d291479450e43e13c6263b8445c4c3fb963a312e3370d",
       "passed": true,
       "checks": [
         {
           "name": "quality",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "quality checks passed",
           "details": {
             "avg_chars_per_page": 1086.0,
@@ -655,6 +707,7 @@
           "name": "completeness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "completeness checks passed",
           "details": {
             "source": "b12_uncovered_topic.md",
@@ -667,6 +720,7 @@
           "name": "recency",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "no prior version detected",
           "details": {
             "logical_key": "faculty startups and ip revenue sharing"
@@ -676,6 +730,7 @@
           "name": "uniqueness",
           "passed": true,
           "pass": true,
+          "status": "pass",
           "reason": "document is unique",
           "details": {
             "max_similarity": 0.855,

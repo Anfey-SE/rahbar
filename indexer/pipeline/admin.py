@@ -113,17 +113,29 @@ def print_report_table(report_path: Path | str) -> int:
         else:
             checks = raw_checks
 
-        q_pass = "pass" if checks.get("quality", {}).get("pass") else "FAIL"
-        c_pass = "pass" if checks.get("completeness", {}).get("pass") else "FAIL"
-        r_pass = "pass" if checks.get("recency", {}).get("pass") else "FAIL"
-        u_pass = "pass" if checks.get("uniqueness", {}).get("pass") else "FAIL"
+        def _get_status(chk: dict[str, Any]) -> str:
+            st = str(chk.get("status", "")).lower()
+            if st in {"skipped", "skip"} or chk.get("skipped") or chk.get("details", {}).get("skipped"):
+                return "skipped"
+            return "pass" if chk.get("pass") or chk.get("passed") else "FAIL"
+
+        q_pass = _get_status(checks.get("quality", {}))
+        c_pass = _get_status(checks.get("completeness", {}))
+        r_pass = _get_status(checks.get("recency", {}))
+        u_pass = _get_status(checks.get("uniqueness", {}))
         decision = str(r.get("decision", "unknown"))
 
         reason = "-"
         if decision == "quarantined":
             for cname in ("quality", "completeness", "recency", "uniqueness"):
                 chk = checks.get(cname, {})
-                if not chk.get("pass", True):
+                st = str(chk.get("status", "")).lower()
+                if st == "fail" or (
+                    not chk.get("pass")
+                    and not chk.get("passed")
+                    and st != "skipped"
+                    and not chk.get("details", {}).get("skipped")
+                ):
                     reason = str(chk.get("reason", "failed"))
                     break
         elif decision == "unchanged, skipped":

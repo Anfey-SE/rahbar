@@ -409,12 +409,7 @@ def run_ingest(
         d_ids = d_res.get("ids", [])
         d_metas = d_res.get("metadatas", [])
         d_embs = d_res.get("embeddings", [])
-        emb_list = (
-            [e.tolist() if hasattr(e, "tolist") else e for e in d_embs]
-            if d_embs is not None
-            else [None] * len(d_ids)
-        )
-        for did, meta, emb in zip(d_ids, d_metas, emb_list):
+        for did, meta, emb in zip(d_ids, d_metas, d_embs if d_embs is not None else [None] * len(d_ids)):
             st = str(meta.get("status", "active"))
             d_dict = {
                 "doc_id": did,
@@ -563,7 +558,11 @@ def run_ingest(
             # Quarantine failing document
             _quarantine_doc(path, dirs["quarantine"], vr.to_dict())
             counts["documents_quarantined"] += 1
-            _log("quarantined", source=path.name, doc_id=doc_id, reason=vr.checks[0].reason)
+            fail_reason = next(
+                (c.reason for c in vr.checks if c.status == "fail" or not c.passed),
+                vr.checks[0].reason,
+            )
+            _log("quarantined", source=path.name, doc_id=doc_id, reason=fail_reason)
             continue
 
         # Document PASSED verification
@@ -642,7 +641,7 @@ def run_ingest(
             "status": status,
             "norm_text_hash": norm_text_h,
         }
-        if doc_vec is not None and len(doc_vec) > 0:
+        if doc_vec:
             docs_collection.upsert(
                 ids=[doc_id],
                 embeddings=[doc_vec],

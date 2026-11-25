@@ -37,6 +37,7 @@ class CheckResult:
     passed: bool
     reason: str
     details: dict[str, Any] = field(default_factory=dict)
+    status: str = "pass"  # "pass", "fail", "skipped"
 
 
 @dataclass
@@ -54,7 +55,7 @@ class VerificationResult:
 
     @property
     def passed(self) -> bool:
-        return all(c.passed for c in self.checks)
+        return all(c.passed and c.status != "fail" for c in self.checks)
 
     def __iter__(self) -> Iterator[Any]:
         yield self
@@ -70,8 +71,9 @@ class VerificationResult:
             "checks": [
                 {
                     "name": c.name,
-                    "passed": c.passed,
-                    "pass": c.passed,
+                    "passed": (c.passed and c.status != "skipped"),
+                    "pass": (c.passed and c.status != "skipped") if c.status != "skipped" else None,
+                    "status": c.status,
                     "reason": c.reason,
                     "details": c.details,
                 }
@@ -341,6 +343,7 @@ def check_quality(
             passed=False,
             reason=f"extraction failed: {extraction_error}",
             details={"error": extraction_error},
+            status="fail",
         )
     if doc is None or not doc.pages:
         return CheckResult(
@@ -348,6 +351,7 @@ def check_quality(
             passed=False,
             reason="extraction produced zero pages",
             details={"pages": 0},
+            status="fail",
         )
 
     page_count = len(doc.pages)
@@ -365,6 +369,7 @@ def check_quality(
                 "total_chars": total_chars,
                 "page_count": page_count,
             },
+            status="fail",
         )
 
     all_text = " ".join(p.text for p in doc.pages)
@@ -382,6 +387,7 @@ def check_quality(
                 "alpha_ratio": round(alpha_ratio, 3),
                 "threshold": settings.verify_min_alpha_ratio,
             },
+            status="fail",
         )
 
     if fffd_count > settings.verify_max_replacement_chars:
@@ -393,6 +399,7 @@ def check_quality(
                 "replacement_chars": fffd_count,
                 "threshold": settings.verify_max_replacement_chars,
             },
+            status="fail",
         )
 
     return CheckResult(
@@ -406,6 +413,7 @@ def check_quality(
             "ocr_confidence_checked": False,
             "ocr_note": "sub-check skipped for performance; text length and alphabetic ratio validated",
         },
+        status="pass",
     )
 
 
@@ -429,6 +437,7 @@ def check_completeness(
             passed=False,
             reason=f"cannot parse document (corrupt): {extraction_error}",
             details={"error": extraction_error},
+            status="fail",
         )
 
     if not path.name:
@@ -437,6 +446,7 @@ def check_completeness(
             passed=False,
             reason="missing required metadata: source",
             details={"missing": "source"},
+            status="fail",
         )
 
     if not title:
@@ -445,6 +455,7 @@ def check_completeness(
             passed=False,
             reason="missing required metadata: title",
             details={"missing": "title"},
+            status="fail",
         )
 
     if not doc_version or doc_version == "unknown":
@@ -453,6 +464,7 @@ def check_completeness(
             passed=False,
             reason="missing required metadata: date/version",
             details={"missing": "date/version"},
+            status="fail",
         )
 
     if page_count <= 0:
@@ -461,6 +473,7 @@ def check_completeness(
             passed=False,
             reason="missing required metadata: page count",
             details={"missing": "page_count"},
+            status="fail",
         )
 
     if pdf_meta_pages is not None and pdf_meta_pages > page_count:
@@ -469,6 +482,7 @@ def check_completeness(
             passed=False,
             reason=f"document is truncated (metadata specifies {pdf_meta_pages} pages, but only {page_count} read)",
             details={"meta_pages": pdf_meta_pages, "read_pages": page_count},
+            status="fail",
         )
 
     suffix = path.suffix.lower()
@@ -485,6 +499,7 @@ def check_completeness(
                         passed=False,
                         reason="document is truncated: final paragraph stops mid-sentence",
                         details={"last_character": last_para[-1], "last_snippet": last_para[-40:]},
+                        status="fail",
                     )
 
     return CheckResult(
@@ -497,13 +512,14 @@ def check_completeness(
             "doc_version": doc_version,
             "page_count": page_count,
         },
+        status="pass",
     )
 
 
 def check_recency(
     doc_id: str,
     logical_key: str,
-    doc_version: str,
+    doc_version: str | None,
     existing_active_docs: list[dict[str, Any]],
 ) -> tuple[CheckResult, list[str]]:
     """Check 3: Recency.
@@ -511,8 +527,19 @@ def check_recency(
     If an active document with the same logical key already exists:
     - newer version passes and marks older active document to be archived.
     - older version fails recency.
+    If versions cannot be compared, pass with a note in details.
     Returns (CheckResult, list_of_doc_ids_to_archive).
     """
+    if not doc_version or doc_version == "unknown":
+        return CheckResult(
+            name="recency",
+            passed=True,
+            reason="versions cannot be compared (missing date/version)",
+            details={"note": "incoming document missing comparable version", "logical_key": logical_key},
+            status="pass",
+        ), []
+
+    t_incoming = parse_version_tuple(doc_version)
     to_archive: list[str] = []
     for ex in existing_active_docs:
         ex_id = ex.get("doc_id", "")
@@ -522,6 +549,20 @@ def check_recency(
             continue
         if ex.get("logical_key") == logical_key:
             ex_ver = str(ex.get("doc_version", "unknown"))
+            t_existing = parse_version_tuple(ex_ver) if ex_ver else None
+            if t_incoming is None or t_existing is None:
+                return CheckResult(
+                    name="recency",
+                    passed=True,
+                    reason="versions cannot be compared",
+                    details={
+                        "note": "cannot compare versions with existing document",
+                        "existing_doc_id": ex_id,
+                        "existing_version": ex_ver,
+                        "incoming_version": doc_version,
+                    },
+                    status="pass",
+                ), []
             cmp = compare_versions(doc_version, ex_ver)
             if cmp > 0:
                 to_archive.append(ex_id)
@@ -535,9 +576,8 @@ def check_recency(
                         "existing_version": ex_ver,
                         "incoming_version": doc_version,
                     },
+                    status="fail",
                 ), []
-            else:
-                pass
 
     if to_archive:
         return CheckResult(
@@ -545,6 +585,7 @@ def check_recency(
             passed=True,
             reason=f"newer version than existing active document(s): {', '.join(to_archive)}",
             details={"supersedes": to_archive, "incoming_version": doc_version},
+            status="pass",
         ), to_archive
 
     return CheckResult(
@@ -552,6 +593,7 @@ def check_recency(
         passed=True,
         reason="no prior version detected",
         details={"logical_key": logical_key},
+        status="pass",
     ), []
 
 
@@ -579,21 +621,24 @@ def check_uniqueness(
                 passed=False,
                 reason=f"exact duplicate of {ex_id}",
                 details={"exact_duplicate_of": ex_id, "match_type": "file_hash"},
+                status="fail",
             )
 
     # 2. Exact duplicate by whitespace-normalized text hash
-    norm_text_hash = hashlib.sha256(" ".join(text.split()).encode("utf-8")).hexdigest()
-    for ex in existing_docs:
-        ex_id = ex.get("doc_id", "")
-        if ex_id == doc_id:
-            continue
-        if ex.get("norm_text_hash") == norm_text_hash:
-            return CheckResult(
-                name="uniqueness",
-                passed=False,
-                reason=f"exact duplicate of {ex_id}",
-                details={"exact_duplicate_of": ex_id, "match_type": "text_hash"},
-            )
+    if text.strip():
+        norm_text_hash = hashlib.sha256(" ".join(text.split()).encode("utf-8")).hexdigest()
+        for ex in existing_docs:
+            ex_id = ex.get("doc_id", "")
+            if ex_id == doc_id:
+                continue
+            if ex.get("norm_text_hash") == norm_text_hash:
+                return CheckResult(
+                    name="uniqueness",
+                    passed=False,
+                    reason=f"exact duplicate of {ex_id}",
+                    details={"exact_duplicate_of": ex_id, "match_type": "text_hash"},
+                    status="fail",
+                )
 
     # 3. Near-duplicate by embedding similarity among ACTIVE documents
     max_sim = 0.0
@@ -623,6 +668,7 @@ def check_uniqueness(
                 "similarity": round(max_sim, 3),
                 "threshold": threshold,
             },
+            status="fail",
         )
 
     return CheckResult(
@@ -630,6 +676,7 @@ def check_uniqueness(
         passed=True,
         reason="document is unique",
         details={"max_similarity": round(max_sim, 3), "threshold": threshold},
+        status="pass",
     )
 
 
@@ -700,33 +747,60 @@ def verify_document(
     full_text = " ".join(p.text for p in doc.pages) if doc and doc.pages else ""
 
     # Check 1: Quality
+    to_archive: list[str] = []
     c_quality = check_quality(doc, extraction_error, active_settings)
 
-    # Check 2: Completeness
-    c_complete = check_completeness(
-        path=path,
-        title=final_title,
-        doc_version=final_version,
-        page_count=pages_num,
-        raw_content=raw_bytes,
-        pdf_meta_pages=pdf_meta_pages,
-        extraction_error=extraction_error,
-    )
-
-    # Check 3: Recency
-    to_archive: list[str] = []
-    if c_complete.passed and final_version:
-        c_recency, to_archive = check_recency(doc_id, logical_key, final_version, existing_active)
-    else:
+    if not c_quality.passed or extraction_error:
+        # Prerequisite failed: extraction failed or text is empty/garbled
+        skip_msg = "not evaluated: extraction failed" if extraction_error else f"not evaluated: quality check failed ({c_quality.reason})"
+        c_complete = CheckResult(
+            name="completeness",
+            passed=True,
+            status="skipped",
+            reason=skip_msg,
+            details={"skipped": True, "prerequisite": "quality"},
+        )
         c_recency = CheckResult(
             name="recency",
-            passed=False,
-            reason="recency check skipped due to missing title or version",
-            details={"skipped": True},
+            passed=True,
+            status="skipped",
+            reason=skip_msg,
+            details={"skipped": True, "prerequisite": "quality"},
+        )
+        c_uniqueness = CheckResult(
+            name="uniqueness",
+            passed=True,
+            status="skipped",
+            reason=skip_msg,
+            details={"skipped": True, "prerequisite": "quality"},
+        )
+    else:
+        # Check 2: Completeness
+        c_complete = check_completeness(
+            path=path,
+            title=final_title,
+            doc_version=final_version,
+            page_count=pages_num,
+            raw_content=raw_bytes,
+            pdf_meta_pages=pdf_meta_pages,
+            extraction_error=None,
         )
 
-    # Check 4: Uniqueness
-    if c_quality.passed and c_complete.passed:
+        # Check 3: Recency
+        # Recency needs a logical key (title). If title is completely missing, recency cannot compare keys.
+        if not final_title:
+            c_recency = CheckResult(
+                name="recency",
+                passed=True,
+                status="skipped",
+                reason="not evaluated: missing title",
+                details={"skipped": True, "prerequisite": "title"},
+            )
+        else:
+            c_recency, to_archive = check_recency(doc_id, logical_key, final_version, existing_active)
+
+        # Check 4: Uniqueness
+        # Quality passed, so we have extracted text and doc_vec. Uniqueness evaluates directly!
         c_uniqueness = check_uniqueness(
             doc_id=doc_id,
             doc_hash=doc_hash,
@@ -735,17 +809,10 @@ def verify_document(
             existing_docs=existing_unique,
             threshold=active_settings.verify_near_dup_threshold,
         )
-    else:
-        c_uniqueness = CheckResult(
-            name="uniqueness",
-            passed=False,
-            reason="uniqueness check skipped due to prior quality/completeness failure",
-            details={"skipped": True},
-        )
 
     warnings = check_warnings(full_text)
     checks = [c_quality, c_complete, c_recency, c_uniqueness]
-    passed = all(c.passed for c in checks)
+    passed = all(c.passed and c.status != "fail" for c in checks)
 
     decision = "accepted" if passed else "quarantined"
     actions = ["indexed"] if passed else ["quarantined"]
