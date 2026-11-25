@@ -55,9 +55,9 @@ ANSWER: none, must abstain
 WRITTEN-BY: ashley
 
 Q: Is there a specific dress code that students are required to follow on campus?
-TYPE: unanswerable
-DOC: none
-PAGE: none
-CLAUSE: none
-ANSWER: none, must abstain
+TYPE: answerable
+DOC: student-handbook-jun-2026.pdf
+PAGE: 12
+CLAUSE: 20. Dress Code
+ANSWER: Students must dress in line with local cultural values: no shorts or sleeveless shirts, nothing provocative or indecent, no tight or see-through clothes, no heavy make-up or expensive jewellery
 WRITTEN-BY: ashley
