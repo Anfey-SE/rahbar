@@ -79,11 +79,30 @@ def test_readyz_all_healthy(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "ready"
+    assert data["collection"] == "rahbar"
     assert data["checks"]["chroma"] == "ok"
     assert data["checks"]["collection"] == "ok"
     assert data["checks"]["count"] == 3
     assert data["checks"]["embed_model"] == "dummy-768"
     assert data["checks"]["redis"] == "ok"
+
+
+def test_info_endpoint(client: TestClient) -> None:
+    r = client.get("/info")
+    assert r.status_code == 200
+    data = r.json()
+    for key in (
+        "embed_model",
+        "collection",
+        "relevance_floor",
+        "top_k",
+        "temperature",
+        "llm_model",
+        "chunk_size",
+        "chunk_overlap",
+    ):
+        assert key in data
+    assert data["collection"] == "rahbar"
 
 
 def test_readyz_empty_collection(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
