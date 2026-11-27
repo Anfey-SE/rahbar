@@ -5,3 +5,6 @@ namespace: rahbar
 
 resources:
   - ../../base
+
+patches:
+  - path: patch-configmap.yaml
