@@ -742,7 +742,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--data-dir",
-        default=os.environ.get("DATA_DIR") or str(_FALLBACK_DATA_DIR),
+        default=None,
         help="Data directory for lake/quarantine/reports (defaults to DATA_DIR or /tmp/rahbar-data)",
     )
     parser.add_argument(
@@ -799,7 +799,17 @@ def main() -> int:
         print(f"ERROR: input directory does not exist: {input_dir}", file=sys.stderr)
         return 1
 
-    data_dir = _resolve_writable_data_dir(Path(args.data_dir))
+    if args.data_dir is not None:
+        data_dir = Path(args.data_dir)
+        if not _is_dir_writable(data_dir):
+            print(
+                f"ERROR: data directory is not writable: {data_dir}",
+                file=sys.stderr,
+            )
+            return 1
+    else:
+        default_data_dir = Path(os.environ.get("DATA_DIR") or str(_FALLBACK_DATA_DIR))
+        data_dir = _resolve_writable_data_dir(default_data_dir)
 
     _log(
         "ingestion starting",

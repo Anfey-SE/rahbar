@@ -707,25 +707,54 @@ def test_cli_defaults_from_env(
     assert _patch_chroma.get_or_create_collection("env-collection").count() > 0
 
 
-def test_cli_unwritable_data_dir_fallback(
+def test_cli_explicit_unwritable_data_dir_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Unwritable --data-dir falls back to /tmp/rahbar-data with a warning log."""
-    from pipeline.run import _FALLBACK_DATA_DIR, _resolve_writable_data_dir
-
+    """Explicitly passing an unwritable --data-dir fails with exit code 1 and no fallback."""
+    input_dir = _create_test_docs(tmp_path)
     bad_dir = tmp_path / "readonly_data"
 
-    def fake_writable(path: Path) -> bool:
-        return path == _FALLBACK_DATA_DIR
+    monkeypatch.setattr("pipeline.run._is_dir_writable", lambda path: False)
+    monkeypatch.setattr(
+        sys, "argv", ["pipeline.run", "--input", str(input_dir), "--data-dir", str(bad_dir)]
+    )
 
-    monkeypatch.setattr("pipeline.run._is_dir_writable", fake_writable)
-    resolved = _resolve_writable_data_dir(bad_dir)
+    rc = main()
+    captured = capsys.readouterr()
+
+    assert rc == 1
+    assert "data directory is not writable" in captured.err
+    assert "falling back" not in captured.out
+
+
+def test_cli_default_unwritable_data_dir_falls_back(
+    tmp_path: Path,
+    _patch_chroma: MockClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """When --data-dir is omitted and DATA_DIR is unwritable, fall back to /tmp/rahbar-data with warning."""
+    from pipeline.run import _FALLBACK_DATA_DIR
+
+    input_dir = _create_test_docs(tmp_path)
+    bad_dir = tmp_path / "readonly_env_data"
+
+    monkeypatch.setenv("CORPUS_DIR", str(input_dir))
+    monkeypatch.setenv("DATA_DIR", str(bad_dir))
+    monkeypatch.setenv("CHROMA_COLLECTION", "fallback-col")
+    monkeypatch.setenv("EMBED_PROVIDER", "hash")
+    monkeypatch.setenv("EMBED_MODEL", "hash-768")
+    monkeypatch.setattr("pipeline.run._is_dir_writable", lambda path: path == _FALLBACK_DATA_DIR)
+    monkeypatch.setattr(sys, "argv", ["pipeline.run"])
+
+    rc = main()
     out = capsys.readouterr().out
 
-    assert resolved == _FALLBACK_DATA_DIR
+    assert rc == 0
     assert "falling back to /tmp/rahbar-data" in out
+    assert "documents_seen=3" in out
 
 
 def test_cli_dummy_without_corpus_dir(
