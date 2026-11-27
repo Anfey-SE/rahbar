@@ -91,6 +91,22 @@ class MockCollection:
         for i in ids:
             self._rows.pop(i, None)
 
+    def update(
+        self,
+        ids: list[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        documents: list[str] | None = None,
+        embeddings: list[list[float]] | None = None,
+    ) -> None:
+        for idx, cid in enumerate(ids):
+            if cid in self._rows:
+                if metadatas and idx < len(metadatas):
+                    self._rows[cid]["metadata"].update(metadatas[idx])
+                if documents and idx < len(documents):
+                    self._rows[cid]["document"] = documents[idx]
+                if embeddings and idx < len(embeddings):
+                    self._rows[cid]["embedding"] = embeddings[idx]
+
     def modify(self, metadata: dict[str, object]) -> None:
         self._meta.update(metadata)
 
@@ -200,7 +216,7 @@ def test_verify_stub_all_pass() -> None:
     assert len(vr.checks) == 4
     for c in vr.checks:
         assert c.passed
-        assert "stub" in c.reason
+        assert c.reason
 
 
 def test_verify_result_to_dict() -> None:

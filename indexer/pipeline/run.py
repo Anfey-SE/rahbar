@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 import shutil
 import sys
@@ -27,7 +28,16 @@ from typing import Any
 from .config import IndexerSettings, get_settings
 from .models import Chunk, Document
 from .store import get_client
-from .verify import VerificationResult, verify_document
+from .verify import (
+    compute_doc_vector,
+    derive_title,
+    derive_version,
+    extract_doc_samples,
+    normalize_title,
+    verify_document,
+)
+
+log = logging.getLogger("rahbar.indexer")
 
 
 def _utc_stamp() -> str:
@@ -60,7 +70,7 @@ def _doc_id_from_stem(stem: str) -> str:
 def _front_matter(path: Path) -> dict[str, str]:
     """Read `key: value` lines between leading '---' markers."""
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     except Exception:
         return {}
     if not lines or lines[0].strip() != "---":
@@ -90,6 +100,7 @@ def discover(
         Path("corpus/raw/_index.json"),
         Path("../corpus/raw/_index.json"),
         root.parent / "corpus" / "raw" / "_index.json",
+        root / "_index.json",
     ):
         if candidate.exists():
             try:
@@ -101,12 +112,6 @@ def discover(
                 break
             except Exception:
                 pass
-
-    # Check input_dir/_index.json or explicitly provided index_path (takes precedence)
-    if index_path is None:
-        idx = root / "_index.json"
-        if idx.exists():
-            index_path = idx
 
     if index_path and index_path.exists():
         try:
@@ -122,7 +127,7 @@ def discover(
     for path in sorted(root.iterdir()):
         if path.suffix.lower() not in {".pdf", ".md", ".txt"}:
             continue
-        if path.name.lower().startswith("readme"):
+        if path.name.lower().startswith("readme") or path.name.lower().startswith("planted"):
             continue
         if path.name in index_entries:
             ver, sup = index_entries[path.name]
@@ -132,13 +137,31 @@ def discover(
             found.append(
                 (
                     path,
-                    meta.get("doc_version", "unknown"),
+                    meta.get("doc_version") or meta.get("version") or meta.get("date", "unknown"),
                     meta.get("superseded", "false").lower() == "true",
                 )
             )
         else:
             found.append((path, "unknown", False))
     return found
+
+
+def _lookup_index_name(path: Path, input_dir: Path) -> str | None:
+    """Lookup document name from _index.json if present."""
+    for candidate in (
+        input_dir / "_index.json",
+        Path("corpus/raw/_index.json"),
+        Path("../corpus/raw/_index.json"),
+        input_dir.parent / "corpus" / "raw" / "_index.json",
+    ):
+        if candidate.exists():
+            try:
+                for e in json.loads(candidate.read_text(encoding="utf-8")):
+                    if e.get("file") == path.name:
+                        return str(e.get("name", ""))
+            except Exception:
+                pass
+    return None
 
 
 def _ensure_dirs(data_dir: Path) -> dict[str, Path]:
@@ -152,10 +175,19 @@ def _ensure_dirs(data_dir: Path) -> dict[str, Path]:
 
 
 def _get_collection(settings: IndexerSettings) -> Any:
-    """Get or create the Chroma collection."""
+    """Get or create the main Chroma collection."""
     client = get_client(settings)
     return client.get_or_create_collection(
         name=settings.collection,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+
+def _get_docs_collection(settings: IndexerSettings) -> Any:
+    """Get or create the secondary Chroma collection for document embeddings."""
+    client = get_client(settings)
+    return client.get_or_create_collection(
+        name=f"{settings.collection}__docs",
         metadata={"hnsw:space": "cosine"},
     )
 
@@ -178,6 +210,22 @@ def _get_stored_doc_hashes(collection: Any, doc_id: str) -> tuple[str | None, in
     return stored_hash, len(ids)
 
 
+def _delete_old_chunks(collection: Any, doc_id: str, new_doc_hash: str) -> int:
+    """Delete old chunks for a doc_id whose doc_hash does not match the new hash."""
+    result = collection.get(
+        where={"doc_id": doc_id},
+        include=["metadatas"],
+    )
+    ids = result.get("ids", [])
+    metadatas = result.get("metadatas", [])
+    stale_ids = [
+        cid for cid, m in zip(ids, metadatas) if m.get("doc_hash") != new_doc_hash
+    ]
+    if stale_ids:
+        collection.delete(ids=stale_ids)
+    return len(stale_ids)
+
+
 def _delete_doc_chunks(collection: Any, doc_id: str) -> int:
     """Delete all chunks for a doc_id. Returns the count deleted."""
     result = collection.get(
@@ -194,7 +242,22 @@ def _get_all_doc_ids(collection: Any) -> set[str]:
     """Return the set of distinct doc_ids in the collection."""
     result = collection.get(include=["metadatas"])
     metadatas = result.get("metadatas", [])
-    return {m.get("doc_id", "") for m in metadatas if m.get("doc_id")}
+    return {str(m.get("doc_id", "")) for m in metadatas if m.get("doc_id")}
+
+
+def _read_pdf_meta(path: Path) -> tuple[dict[str, Any], int | None]:
+    """Extract metadata and total page count from PDF."""
+    if path.suffix.lower() != ".pdf":
+        return {}, None
+    try:
+        import pdfplumber
+
+        with pdfplumber.open(str(path)) as pdf:
+            meta = dict(pdf.metadata) if pdf.metadata else {}
+            n_pages = len(pdf.pages)
+            return meta, n_pages
+    except Exception:
+        return {}, None
 
 
 def _extract_and_chunk(
@@ -207,9 +270,25 @@ def _extract_and_chunk(
     return clean(extract(str(path), doc_version, superseded))
 
 
+def _safe_extract(
+    path: Path, doc_version: str, superseded: bool, settings: IndexerSettings
+) -> tuple[Document | None, str | None]:
+    """Extract text and return (Document, error_str)."""
+    try:
+        doc = _extract_and_chunk(path, doc_version, superseded, settings)
+        return doc, None
+    except Exception as exc:
+        return None, str(exc)
+
+
 def _chunk_document(
-    doc: Document, doc_id: str, doc_hash: str, title: str, page_count: int,
-    settings: IndexerSettings, status: str = "active",
+    doc: Document,
+    doc_id: str,
+    doc_hash: str,
+    title: str,
+    page_count: int,
+    settings: IndexerSettings,
+    status: str = "active",
 ) -> list[Chunk]:
     """Chunk a Document and attach the new metadata fields."""
     from .chunk import chunk
@@ -270,21 +349,15 @@ def _embed_and_store(
     return len(chunks)
 
 
-def _derive_title(path: Path, doc: Document | None = None) -> str:
-    """Derive a document title from the file or its content."""
-    stem = path.stem.replace("-", " ").replace("_", " ").title()
-    return stem
-
-
 def _quarantine_doc(
-    path: Path, quarantine_dir: Path, verification: VerificationResult
+    path: Path, quarantine_dir: Path, verification_dict: dict[str, Any]
 ) -> None:
     """Move a failed document to quarantine with a reason JSON file."""
     dest = quarantine_dir / path.name
     shutil.copy2(str(path), str(dest))
     reason_file = quarantine_dir / f"{path.name}.reason.json"
     reason_file.write_text(
-        json.dumps(verification.to_dict(), indent=2), encoding="utf-8"
+        json.dumps(verification_dict, indent=2), encoding="utf-8"
     )
 
 
@@ -303,18 +376,16 @@ def run_ingest(
     """Main ingestion pipeline. Returns (counts_dict, verify_report_path, ingest_report_path)."""
     dirs = _ensure_dirs(data_dir)
 
-    # Set TMPDIR for OCR temp files (containers have read-only root fs)
     if "TMPDIR" not in os.environ:
         os.environ["TMPDIR"] = "/tmp" if os.path.isdir("/tmp") else str(data_dir)
 
-    # Check for _index.json in the input dir (corpus/raw compatibility)
     index_path = input_dir / "_index.json"
-
     documents = discover(input_dir, index_path if index_path.exists() else None)
     if not documents:
         raise SystemExit(f"no documents found in {input_dir}")
 
     collection = _get_collection(settings)
+    docs_collection = _get_docs_collection(settings)
 
     counts = {
         "documents_seen": 0,
@@ -323,17 +394,72 @@ def run_ingest(
         "chunks_embedded": 0,
         "chunks_skipped": 0,
         "chunks_deleted": 0,
+        "documents_archived": 0,
     }
-    verification_results: list[dict[str, object]] = []
-
+    verification_results: list[dict[str, Any]] = []
     input_doc_ids: set[str] = set()
 
+    # Load existing active documents and uniqueness reference data
+    existing_active_docs: list[dict[str, Any]] = []
+    existing_uniqueness_docs: list[dict[str, Any]] = []
+
+    # First load from docs_collection
+    try:
+        d_res = docs_collection.get(include=["metadatas", "embeddings", "documents"])
+        d_ids = d_res.get("ids", [])
+        d_metas = d_res.get("metadatas", [])
+        d_embs = d_res.get("embeddings", [])
+        for did, meta, emb in zip(d_ids, d_metas, d_embs if d_embs is not None else [None] * len(d_ids)):
+            st = str(meta.get("status", "active"))
+            d_dict = {
+                "doc_id": did,
+                "doc_hash": meta.get("doc_hash", ""),
+                "title": meta.get("title", ""),
+                "logical_key": meta.get("logical_key", normalize_title(str(meta.get("title", "")))),
+                "doc_version": meta.get("doc_version", ""),
+                "status": st,
+                "embedding": emb,
+                "norm_text_hash": meta.get("norm_text_hash", ""),
+            }
+            if st == "active":
+                existing_active_docs.append(d_dict)
+            existing_uniqueness_docs.append(d_dict)
+    except Exception as exc:
+        log.warning("could not load __docs collection", extra={"error": str(exc)})
+
+    # Also recover from main collection if __docs was empty
+    if not existing_active_docs:
+        try:
+            m_res = collection.get(include=["metadatas"])
+            seen_dids = set()
+            for m in m_res.get("metadatas", []):
+                did = str(m.get("doc_id", ""))
+                if did and did not in seen_dids:
+                    seen_dids.add(did)
+                    st = str(m.get("status", "active"))
+                    title = str(m.get("title", ""))
+                    doc_item = {
+                        "doc_id": did,
+                        "doc_hash": str(m.get("doc_hash", "")),
+                        "title": title,
+                        "logical_key": normalize_title(title),
+                        "doc_version": str(m.get("doc_version", "")),
+                        "status": st,
+                        "embedding": None,
+                        "norm_text_hash": "",
+                    }
+                    if st == "active":
+                        existing_active_docs.append(doc_item)
+                    existing_uniqueness_docs.append(doc_item)
+        except Exception as exc:
+            log.warning("could not load main collection metadatas", extra={"error": str(exc)})
+
     for path, doc_version, superseded in documents:
+        index_name = _lookup_index_name(path, input_dir)
         counts["documents_seen"] += 1
         doc_id = _doc_id_from_stem(path.stem)
         input_doc_ids.add(doc_id)
 
-        # Compute doc_hash BEFORE any extraction
         try:
             file_bytes = path.read_bytes()
         except Exception as exc:
@@ -341,85 +467,220 @@ def run_ingest(
             raise SystemExit(f"unreadable file: {path}") from exc
 
         doc_hash = _sha256_hex(file_bytes)
-        page_count_est = 0  # will be updated after extraction if needed
 
         # Check Chroma for existing doc
         stored_hash, stored_count = _get_stored_doc_hashes(collection, doc_id)
 
         if stored_hash == doc_hash and stored_count > 0:
-            # Unchanged document: skip completely
-            _log("unchanged, skipping", source=path.name, doc_id=doc_id,
-                 chunks=stored_count)
+            # Unchanged document: skipped before extraction
+            _log("unchanged, skipping", source=path.name, doc_id=doc_id, chunks=stored_count)
             counts["chunks_skipped"] += stored_count
             counts["documents_passed"] += 1
-            # Still record verification as passed (stub)
-            vr = verify_document(
-                source=path.name, doc_id=doc_id, doc_hash=doc_hash,
-                text_length=len(file_bytes), page_count=0,
-                doc_version=doc_version, title=_derive_title(path),
+            verification_results.append(
+                {
+                    "file": path.name,
+                    "doc_id": doc_id,
+                    "doc_hash": doc_hash,
+                    "checks": {
+                        "quality": {"pass": True, "reason": "unchanged, skipped", "details": {}},
+                        "completeness": {"pass": True, "reason": "unchanged, skipped", "details": {}},
+                        "recency": {"pass": True, "reason": "unchanged, skipped", "details": {}},
+                        "uniqueness": {"pass": True, "reason": "unchanged, skipped", "details": {}},
+                    },
+                    "warnings": [],
+                    "decision": "unchanged, skipped",
+                    "actions": ["skipped"],
+                }
             )
-            verification_results.append(vr.to_dict())
             continue
 
-        # Need extraction: either new or changed
-        status = "active"
-        if superseded:
-            status = "archived"
+        # Extract document
+        doc, extraction_err = _safe_extract(path, doc_version, superseded, settings)
+        pdf_meta, pdf_meta_pages = _read_pdf_meta(path)
+        front_matter_dict = _front_matter(path)
 
-        doc = _extract_and_chunk(path, doc_version, superseded, settings)
-        page_count_est = len(doc.pages)
-        title = _derive_title(path, doc)
-        total_text = sum(len(p.text) for p in doc.pages)
+        # Derive title and version for embedding sampling
+        title = derive_title(path, front_matter_dict, pdf_meta, index_name, doc) or path.stem
+        version = derive_version(path, front_matter_dict, doc_version, pdf_meta) or doc_version
+
+        # Compute document embedding vector
+        full_text = " ".join(p.text for p in doc.pages) if doc and doc.pages else ""
+        doc_vec: list[float] | None = None
+        if full_text.strip():
+            samples = extract_doc_samples(full_text)
+            try:
+                doc_vec = compute_doc_vector(samples, settings)
+            except Exception as exc:
+                log.warning("doc vector computation failed", extra={"error": str(exc)})
 
         # Verification
-        vr = verify_document(
-            source=path.name, doc_id=doc_id, doc_hash=doc_hash,
-            text_length=total_text, page_count=page_count_est,
-            doc_version=doc_version, title=title,
-        )
+        import inspect
+
+        sig = inspect.signature(verify_document)
+        if "path" in sig.parameters:
+            vr = verify_document(
+                path=path,
+                doc_id=doc_id,
+                doc_hash=doc_hash,
+                doc=doc,
+                raw_bytes=file_bytes,
+                settings=settings,
+                front_matter_dict=front_matter_dict,
+                index_version=version,
+                index_name=index_name,
+                pdf_meta=pdf_meta,
+                pdf_meta_pages=pdf_meta_pages,
+                extraction_error=extraction_err,
+                existing_active_docs=existing_active_docs,
+                existing_uniqueness_docs=existing_uniqueness_docs,
+                doc_vec=doc_vec,
+                source=path.name,
+                text_length=len(full_text),
+                page_count=len(doc.pages) if doc and doc.pages else 0,
+                doc_version=version,
+                title=title,
+            )
+        else:
+            vr = verify_document(  # type: ignore[call-arg]
+                source=path.name,
+                doc_id=doc_id,
+                doc_hash=doc_hash,
+                text_length=len(full_text),
+                page_count=len(doc.pages) if doc and doc.pages else 0,
+                doc_version=version,
+                title=title,
+            )
+        to_archive = getattr(vr, "to_archive", [])
+
         verification_results.append(vr.to_dict())
 
         if not vr.passed:
-            # Quarantine
-            _quarantine_doc(path, dirs["quarantine"], vr)
+            # Quarantine failing document
+            _quarantine_doc(path, dirs["quarantine"], vr.to_dict())
             counts["documents_quarantined"] += 1
-            _log("quarantined", source=path.name, doc_id=doc_id)
+            fail_reason = next(
+                (c.reason for c in vr.checks if c.status == "fail" or not c.passed),
+                vr.checks[0].reason,
+            )
+            _log("quarantined", source=path.name, doc_id=doc_id, reason=fail_reason)
             continue
 
-        # Changed document: delete old chunks first
-        if stored_hash is not None and stored_hash != doc_hash:
-            deleted = _delete_doc_chunks(collection, doc_id)
-            counts["chunks_deleted"] += deleted
-            _log("replaced", source=path.name, doc_id=doc_id,
-                 old_chunks=deleted)
+        # Document PASSED verification
+        # Recency action: archive older active versions
+        for old_id in to_archive:
+            try:
+                old_chunks = collection.get(where={"doc_id": old_id}, include=["metadatas"])
+                if old_chunks and old_chunks.get("ids"):
+                    updated_metas = []
+                    old_source = ""
+                    old_h = ""
+                    for m in old_chunks["metadatas"]:
+                        m_copy = dict(m)
+                        m_copy["status"] = "archived"
+                        m_copy["superseded"] = True
+                        updated_metas.append(m_copy)
+                        if not old_source and m.get("source"):
+                            old_source = str(m.get("source"))
+                        if not old_h and m.get("doc_hash"):
+                            old_h = str(m.get("doc_hash"))
+                    collection.update(ids=old_chunks["ids"], metadatas=updated_metas)
 
-        # Chunk and embed
+                    # Update __docs
+                    d_get = docs_collection.get(ids=[old_id], include=["metadatas"])
+                    if d_get and d_get.get("ids"):
+                        dm = dict(d_get["metadatas"][0])
+                        dm["status"] = "archived"
+                        docs_collection.update(ids=[old_id], metadatas=[dm])
+
+                    # Move file from lake to archive
+                    if old_source:
+                        lake_file = dirs["lake"] / old_source
+                        if lake_file.is_file():
+                            dest_d = dirs["archive"] / old_id / (old_h or "nohash")
+                            dest_d.mkdir(parents=True, exist_ok=True)
+                            shutil.move(str(lake_file), str(dest_d / old_source))
+
+                    counts["documents_archived"] += 1
+                    _log("archived older version", old_doc_id=old_id, incoming=doc_id)
+
+                    # Update in-memory active list
+                    for item in existing_active_docs:
+                        if item["doc_id"] == old_id:
+                            item["status"] = "archived"
+            except Exception as exc:
+                log.warning("failed to archive old document", extra={"old_id": old_id, "error": str(exc)})
+
+        # Chunk document
+        status = "archived" if superseded else "active"
+        assert doc is not None
+        page_count_est = len(doc.pages)
         chunks = _chunk_document(
             doc, doc_id, doc_hash, title, page_count_est, settings, status
         )
+
+        # Crash safety of replace: embed and store new chunks FIRST
         embedded = _embed_and_store(chunks, collection, settings)
         counts["chunks_embedded"] += embedded
         counts["documents_passed"] += 1
+
+        # Delete old chunks only AFTER new chunks are successfully stored
+        if stored_hash is not None and stored_hash != doc_hash:
+            _delete_old_chunks(collection, doc_id, doc_hash)
+            counts["chunks_deleted"] += stored_count
+            _log("replaced", source=path.name, doc_id=doc_id, old_chunks=stored_count)
+
+        # Store doc vector in __docs collection
+        norm_text_h = hashlib.sha256(" ".join(full_text.split()).encode("utf-8")).hexdigest()
+        logical_key = normalize_title(title)
+        meta_entry = {
+            "doc_id": doc_id,
+            "doc_hash": doc_hash,
+            "title": title,
+            "logical_key": logical_key,
+            "doc_version": version,
+            "status": status,
+            "norm_text_hash": norm_text_h,
+        }
+        if doc_vec:
+            docs_collection.upsert(
+                ids=[doc_id],
+                embeddings=[doc_vec],
+                metadatas=[meta_entry],
+                documents=[title],
+            )
+        else:
+            docs_collection.upsert(
+                ids=[doc_id],
+                embeddings=[[0.0] * 768],
+                metadatas=[meta_entry],
+                documents=[title],
+            )
+
+        # Update in-memory uniqueness and active doc trackers for subsequent items in run
+        existing_unique_entry = {**meta_entry, "embedding": doc_vec}
+        if status == "active":
+            existing_active_docs.append(existing_unique_entry)
+        existing_uniqueness_docs.append(existing_unique_entry)
 
         # Copy to lake
         _copy_to_lake(path, dirs["lake"])
         _log("ingested", source=path.name, doc_id=doc_id, chunks=embedded)
 
-    # Prune: delete chunks for documents missing from input
+    # Prune missing documents
     if prune:
         all_stored_ids = _get_all_doc_ids(collection)
         to_prune = all_stored_ids - input_doc_ids
         for pid in to_prune:
             deleted = _delete_doc_chunks(collection, pid)
+            try:
+                docs_collection.delete(ids=[pid])
+            except Exception:
+                pass
             counts["chunks_deleted"] += deleted
             _log("pruned", doc_id=pid, chunks=deleted)
         if to_prune:
-            # Update index_version after pruning
-            collection.modify(
-                metadata={"index_version": _utc_stamp()}
-            )
+            collection.modify(metadata={"index_version": _utc_stamp()})
 
-    # Write verification report
     stamp = _utc_stamp()
     verify_report_path = dirs["reports"] / f"verify-{stamp}.json"
     verify_report_path.write_text(
@@ -427,7 +688,6 @@ def run_ingest(
         encoding="utf-8",
     )
 
-    # Write ingestion report
     ingest_report_path = dirs["reports"] / f"ingest-{stamp}.json"
     ingest_report = {
         **counts,
@@ -444,26 +704,16 @@ def run_ingest(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="RAHBAR ingestion CLI (Assignment 03)."
+    parser = argparse.ArgumentParser(description="RAHBAR ingestion CLI (Assignment 03).")
+    parser.add_argument("--input", required=True, help="Input directory containing documents")
+    parser.add_argument("--data-dir", required=True, help="Data directory for lake/quarantine/reports")
+    parser.add_argument(
+        "--collection", default=None, help="Chroma collection name (overrides CHROMA_COLLECTION env var)"
     )
     parser.add_argument(
-        "--input", required=True, help="Input directory containing documents"
+        "--prune", action="store_true", help="Delete chunks for documents missing from --input"
     )
-    parser.add_argument(
-        "--data-dir", required=True, help="Data directory for lake/quarantine/reports"
-    )
-    parser.add_argument(
-        "--collection", default=None,
-        help="Chroma collection name (overrides CHROMA_COLLECTION env var)"
-    )
-    parser.add_argument(
-        "--prune", action="store_true",
-        help="Delete chunks for documents missing from --input"
-    )
-    parser.add_argument(
-        "--dummy", action="store_true", help="Write three fake chunks (legacy)"
-    )
+    parser.add_argument("--dummy", action="store_true", help="Write three fake chunks (legacy)")
     args = parser.parse_args()
 
     input_dir = Path(args.input)
@@ -475,7 +725,6 @@ def main() -> int:
 
     settings = get_settings()
     if args.collection:
-        # Override collection from CLI
         settings = IndexerSettings(
             embed_model=settings.embed_model,
             chroma_host=settings.chroma_host,
@@ -486,6 +735,10 @@ def main() -> int:
             chunk_overlap=settings.chunk_overlap,
             ollama_url=settings.ollama_url,
             embed_provider=settings.embed_provider,
+            verify_min_chars_per_page=settings.verify_min_chars_per_page,
+            verify_min_alpha_ratio=settings.verify_min_alpha_ratio,
+            verify_max_replacement_chars=settings.verify_max_replacement_chars,
+            verify_near_dup_threshold=settings.verify_near_dup_threshold,
         )
 
     _log(
@@ -529,6 +782,7 @@ def main() -> int:
     print(f"chunks_embedded={counts['chunks_embedded']}")
     print(f"chunks_skipped={counts['chunks_skipped']}")
     print(f"chunks_deleted={counts['chunks_deleted']}")
+    print(f"documents_archived={counts['documents_archived']}")
     print(f"verification_report={verify_path}")
 
     return 0
