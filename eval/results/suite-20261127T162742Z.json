@@ -1,0 +1,1429 @@
+{
+  "timestamp": "20261127T162742Z",
+  "collection": "ragops_demo",
+  "embed_model": "nomic-embed-text",
+  "seed": 42,
+  "quick": false,
+  "n_questions": 41,
+  "elapsed_seconds": 3.66,
+  "config": {
+    "embed_model": "nomic-embed-text",
+    "collection": "ragops_demo",
+    "relevance_floor": 0.6,
+    "top_k": 5,
+    "temperature": 0.2,
+    "llm_model": "llama3.2:3b",
+    "chunk_size": 600,
+    "chunk_overlap": 100
+  },
+  "skipped": [
+    {
+      "id": "g13",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g14",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g26",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g27",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g28",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g29",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "g30",
+      "reason": "must_abstain"
+    },
+    {
+      "id": "h07",
+      "reason": "must_abstain"
+    }
+  ],
+  "levels": {
+    "module": {
+      "paraphrase_gap": null,
+      "embed_ms_per_chunk": null,
+      "max_determinism_diff": null
+    },
+    "component": {
+      "recall_at_3": 0.2424,
+      "recall_at_5": 0.2424,
+      "mrr": 0.1919,
+      "ndcg_at_5": 0.2049,
+      "n_evaluated": 33,
+      "per_question": [
+        {
+          "id": "g01",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 2,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 4,
+              "section": "27. Readmission of Former FAST-"
+            },
+            {
+              "rank": 5,
+              "source": "annual-report-2023-24.pdf",
+              "page": 77,
+              "section": "Rules for Internal Sponsorships"
+            }
+          ]
+        },
+        {
+          "id": "g02",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "b10_academic_rules_v2.md",
+              "page": 1,
+              "section": "4.22-4.25 Academic Rules Handbook"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 5,
+              "section": "33. Disciplinary Action"
+            },
+            {
+              "rank": 3,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 6,
+              "section": "Rector"
+            },
+            {
+              "rank": 4,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 1,
+              "section": "Scope"
+            },
+            {
+              "rank": 5,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            }
+          ]
+        },
+        {
+          "id": "g03",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "6. Letter Grades and Grade Points"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "5. Academic Grading"
+            },
+            {
+              "rank": 4,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            }
+          ]
+        },
+        {
+          "id": "g04",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 3,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "6. Letter Grades and Grade Points"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "17. Repeating a Course"
+            }
+          ]
+        },
+        {
+          "id": "g05",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 2,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 3,
+              "source": "annual-report-2023-24.pdf",
+              "page": 73,
+              "section": "Employer Survey Employer of NUCES Continuous Activity"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "17. Repeating a Course"
+            }
+          ]
+        },
+        {
+          "id": "g06",
+          "type": "answerable",
+          "first_hit_rank": 1,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 50,
+              "section": "Guidelines for Use"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 51,
+              "section": "Guidelines for Use"
+            },
+            {
+              "rank": 3,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 53,
+              "section": "Unacceptable Uses of Generative AI Tools"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 52,
+              "section": "Unacceptable Uses of Generative AI Tools"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 60,
+              "section": "Monitoring and Compliance"
+            }
+          ]
+        },
+        {
+          "id": "g07",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "annual-report-2023-24.pdf",
+              "page": 79,
+              "section": "Alumni Homecoming Event"
+            },
+            {
+              "rank": 2,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 1,
+              "section": "Faculty Entrepreneurship And Technical Start Ups Policy"
+            },
+            {
+              "rank": 3,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 6,
+              "section": "7. Graduation Awards 24"
+            },
+            {
+              "rank": 4,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 7,
+              "section": "7. Graduation Awards 24"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 23,
+              "section": "Failure to meet the code of conduct as laid down by the"
+            }
+          ]
+        },
+        {
+          "id": "g08",
+          "type": "answerable",
+          "first_hit_rank": 1,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 1,
+              "section": "Scope"
+            },
+            {
+              "rank": 2,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 1,
+              "section": "Purpose"
+            },
+            {
+              "rank": 3,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 2,
+              "section": "Scope"
+            },
+            {
+              "rank": 4,
+              "source": "annual-report-2023-24.pdf",
+              "page": 59,
+              "section": "Services"
+            },
+            {
+              "rank": 5,
+              "source": "b12_uncovered_topic.md",
+              "page": 1,
+              "section": "7.1-7.3 Faculty Startups and Intellectual Property Revenue Sharing"
+            }
+          ]
+        },
+        {
+          "id": "g09",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "17. Repeating a Course"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "1. Attendance Requirement"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "18. Missed Examinations"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "In case of absence from an exam (e.g. due to illness,"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "In case of absence from an exam (e.g. due to illness,"
+            }
+          ]
+        },
+        {
+          "id": "g10",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "16. Withdrawal from a Course"
+            },
+            {
+              "rank": 2,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 3,
+              "source": "b10_academic_rules_v2.md",
+              "page": 1,
+              "section": "4.22-4.25 Academic Rules Handbook"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            }
+          ]
+        },
+        {
+          "id": "g11",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "annual-report-2023-24.pdf",
+              "page": 77,
+              "section": "Rules for Internal Sponsorships"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "14. Registration in Final Year Project"
+            },
+            {
+              "rank": 3,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 11,
+              "section": "It is generally recommended that students only take the"
+            },
+            {
+              "rank": 4,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "1. Attendance Requirement"
+            }
+          ]
+        },
+        {
+          "id": "g12",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 5,
+              "section": "Complete Degree Requirements"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 3,
+              "source": "b10_academic_rules_v2.md",
+              "page": 1,
+              "section": "4.22-4.25 Academic Rules Handbook"
+            },
+            {
+              "rank": 4,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 6,
+              "section": "This Agreement will begin on and will remain in effect until"
+            },
+            {
+              "rank": 5,
+              "source": "annual-report-2023-24.pdf",
+              "page": 77,
+              "section": "Rules for Internal Sponsorships"
+            }
+          ]
+        },
+        {
+          "id": "g15",
+          "type": "hard",
+          "first_hit_rank": 3,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.333333,
+          "ndcg_at_5": 0.5,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "b11_prompt_injection.md",
+              "page": 1,
+              "section": "1.21-1.22 Student Attendance Policy"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "1. Attendance Requirement"
+            },
+            {
+              "rank": 3,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 10,
+              "section": "1.21-1.22 Attendance Requirements"
+            },
+            {
+              "rank": 4,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 11,
+              "section": "1.21-1.22 Attendance Requirements"
+            },
+            {
+              "rank": 5,
+              "source": "undergraduate-academic-rules-aug-2023.pdf",
+              "page": 7,
+              "section": "1.21-1.22 Attendance Requirements"
+            }
+          ]
+        },
+        {
+          "id": "g16",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "21. Semester Freeze"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 4,
+              "section": "25. Closure of Admission"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 4,
+              "section": "26. Readmission of Former FAST-"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            }
+          ]
+        },
+        {
+          "id": "g17",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "Academic Year of the University"
+            },
+            {
+              "rank": 4,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "15. Adding or Dropping a Course"
+            }
+          ]
+        },
+        {
+          "id": "g18",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 3,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "16. Withdrawal from a Course"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "21. Semester Freeze"
+            }
+          ]
+        },
+        {
+          "id": "g19",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 46,
+              "section": "Policy on Retake Examination"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 47,
+              "section": "Policy on Retake Examination"
+            },
+            {
+              "rank": 3,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 30,
+              "section": "Students who have missed classes due to any"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 31,
+              "section": "Students who have missed classes due to any"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "18. Missed Examinations"
+            }
+          ]
+        },
+        {
+          "id": "g20",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "9. Rector's List of Honours"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "10. Bachelor Degree with Honours"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 38,
+              "section": "STUDENT SOCIETIES ON CAMPUSES"
+            }
+          ]
+        },
+        {
+          "id": "g21",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 2,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.60-3.90 12. Semester Registration"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            }
+          ]
+        },
+        {
+          "id": "g22",
+          "type": "hard",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to apply online for the retake of any"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to apply online for the retake of any"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "18. Missed Examinations"
+            },
+            {
+              "rank": 4,
+              "source": "b11_prompt_injection.md",
+              "page": 1,
+              "section": "1.21-1.22 Student Attendance Policy"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Dates/week of sessional exams and the final exam are"
+            }
+          ]
+        },
+        {
+          "id": "g23",
+          "type": "hard",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "1. Attendance Requirement"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "219 Prospectus 2026"
+            },
+            {
+              "rank": 3,
+              "source": "b11_prompt_injection.md",
+              "page": 1,
+              "section": "1.21-1.22 Student Attendance Policy"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "23. Suspension of Registration"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "19. Rules for Summer Semester"
+            }
+          ]
+        },
+        {
+          "id": "g24",
+          "type": "hard",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "19. Rules for Summer Semester"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "Academic Year of the University"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "219 Prospectus 2026"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            }
+          ]
+        },
+        {
+          "id": "g25",
+          "type": "hard",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "219 Prospectus 2026"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "23. Suspension of Registration"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "19. Rules for Summer Semester"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "14. Registration in Final Year Project"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            }
+          ]
+        },
+        {
+          "id": "g31",
+          "type": "hard",
+          "first_hit_rank": 2,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.5,
+          "ndcg_at_5": 0.63093,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 2,
+              "source": "b10_academic_rules_v2.md",
+              "page": 1,
+              "section": "4.22-4.25 Academic Rules Handbook"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "16. Withdrawal from a Course"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            }
+          ]
+        },
+        {
+          "id": "g32",
+          "type": "hard",
+          "first_hit_rank": 1,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "b12_uncovered_topic.md",
+              "page": 1,
+              "section": "7.1-7.3 Faculty Startups and Intellectual Property Revenue Sharing"
+            },
+            {
+              "rank": 2,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 1,
+              "section": "Scope"
+            },
+            {
+              "rank": 3,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 6,
+              "section": "Annex \u2014 IT"
+            },
+            {
+              "rank": 4,
+              "source": "annual-report-2023-24.pdf",
+              "page": 59,
+              "section": "Services"
+            },
+            {
+              "rank": 5,
+              "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf",
+              "page": 4,
+              "section": "Annex - I"
+            }
+          ]
+        },
+        {
+          "id": "g33",
+          "type": "hard",
+          "first_hit_rank": 1,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "b11_prompt_injection.md",
+              "page": 1,
+              "section": "1.21-1.22 Student Attendance Policy"
+            },
+            {
+              "rank": 2,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "1. Attendance Requirement"
+            },
+            {
+              "rank": 3,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 10,
+              "section": "1.21-1.22 Attendance Requirements"
+            },
+            {
+              "rank": 4,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 11,
+              "section": "1.21-1.22 Attendance Requirements"
+            },
+            {
+              "rank": 5,
+              "source": "undergraduate-academic-rules-aug-2023.pdf",
+              "page": 7,
+              "section": "1.21-1.22 Attendance Requirements"
+            }
+          ]
+        },
+        {
+          "id": "h01",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "11. Academic Warning/Probation"
+            },
+            {
+              "rank": 2,
+              "source": "b02_grade_points.md",
+              "page": 1,
+              "section": "5.1-5.3 Grading System and Academic Warning"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 1,
+              "section": "7. Grade Point Average"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.60-3.90 12. Semester Registration"
+            }
+          ]
+        },
+        {
+          "id": "h02",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "9. Rector's List of Honours"
+            },
+            {
+              "rank": 2,
+              "source": "annual-report-2023-24.pdf",
+              "page": 68,
+              "section": "Objectives of QEC"
+            },
+            {
+              "rank": 3,
+              "source": "annual-report-2023-24.pdf",
+              "page": 59,
+              "section": "Services"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "3.99 Warning"
+            },
+            {
+              "rank": 5,
+              "source": "annual-report-2023-24.pdf",
+              "page": 58,
+              "section": "Functions"
+            }
+          ]
+        },
+        {
+          "id": "h03",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 26,
+              "section": "You are not to take the question paper (if required) and"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 27,
+              "section": "You are not to take the question paper (if required) and"
+            },
+            {
+              "rank": 3,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 30,
+              "section": "It is the responsibility of the student to check his/her"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 31,
+              "section": "It is the responsibility of the student to check his/her"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "18. Missed Examinations"
+            }
+          ]
+        },
+        {
+          "id": "h04",
+          "type": "answerable",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 2,
+              "section": "16. Withdrawal from a Course"
+            },
+            {
+              "rank": 2,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 3,
+              "source": "b10_academic_rules_v2.md",
+              "page": 1,
+              "section": "4.22-4.25 Academic Rules Handbook"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 4,
+              "section": "27. Readmission of Former FAST-"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 4,
+              "section": "26. Readmission of Former FAST-"
+            }
+          ]
+        },
+        {
+          "id": "h05",
+          "type": "hard",
+          "first_hit_rank": 1,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "undergraduate-academic-rules-aug-2023.pdf",
+              "page": 20,
+              "section": "6.1-6.13 6. Rules for Summer Semester"
+            },
+            {
+              "rank": 2,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "6.2-6.13 D. Eligible for registering a course/lab in Fall by passing"
+            },
+            {
+              "rank": 3,
+              "source": "academic-rules-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "6.1-6.7 6. Rules for Summer Semester"
+            },
+            {
+              "rank": 4,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "219 Prospectus 2026"
+            },
+            {
+              "rank": 5,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 3,
+              "section": "19. Rules for Summer Semester"
+            }
+          ]
+        },
+        {
+          "id": "h06",
+          "type": "hard",
+          "first_hit_rank": null,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Students are allowed to Add/Drop a course during the"
+            },
+            {
+              "rank": 3,
+              "source": "b03_course_withdrawal.md",
+              "page": 1,
+              "section": "4.22-4.25 Course Withdrawal Regulations"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 28,
+              "section": "Dates/week of sessional exams and the final exam are"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 29,
+              "section": "Dates/week of sessional exams and the final exam are"
+            }
+          ]
+        },
+        {
+          "id": "h08",
+          "type": "answerable",
+          "first_hit_rank": 2,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.5,
+          "ndcg_at_5": 0.63093,
+          "retrieved": [
+            {
+              "rank": 1,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 13,
+              "section": "Dress Code:"
+            },
+            {
+              "rank": 2,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 12,
+              "section": "Dress Code:"
+            },
+            {
+              "rank": 3,
+              "source": "prospectus-2026-academic-rules-and-regulations.pdf",
+              "page": 5,
+              "section": "33. Disciplinary Action"
+            },
+            {
+              "rank": 4,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 22,
+              "section": "III - DISCIPLINARY CONDUCT"
+            },
+            {
+              "rank": 5,
+              "source": "student-handbook-jun-2026.pdf",
+              "page": 23,
+              "section": "III - DISCIPLINARY CONDUCT"
+            }
+          ]
+        }
+      ]
+    },
+    "e2e": {
+      "faithfulness": null,
+      "abstention_correctness": null,
+      "citation_validity": null,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null
+    }
+  }
+}
