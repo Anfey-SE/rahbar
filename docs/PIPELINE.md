@@ -101,3 +101,6 @@
   1. The chunk has the exact same source PDF filename (`chunk.source == relevant.source`).
   2. **Clause Matching:** If the golden section specifies a numeric clause (e.g., `1.21`), the clause number falls within the chunk's parsed clause range (`start_clause <= target <= end_clause`).
   3. **Heading Matching:** For non-clause headings (e.g., `Scope`, `Faculty Summary`), the golden section text is contained within the chunk's section heading (case-insensitive substring match).
+
+- **Component-Level Hit Rule (`eval/suite/metrics.py`):**
+  A retrieved chunk is a **hit** when it has the **same `source`** AND (**the same `page`** OR **its `section` / clause range contains the relevant clause**). For questions with multiple relevant pages/items, `recall@k` is the fraction of relevant items matched within top `k`, and `nDCG@5` uses binary relevance across all matched items.

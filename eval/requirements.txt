@@ -1,0 +1,6 @@
+# Pinned dependencies for the evaluation suite (Assignment 03).
+chromadb-client==1.0.12
+httpx==0.28.1
+posthog==5.4.0
+pypdf==5.4.0
+PyYAML==6.0.2
