@@ -37,27 +37,32 @@ spec:
       ports:
         - { protocol: TCP, port: 8080 }
 ---
-# 4. api: from the Ingress controller and the ui
+# 4. api & api-candidate: from the Ingress controller, ui, and eval-job
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: { name: api-ingress, namespace: rahbar }
 spec:
-  podSelector: { matchLabels: { app.kubernetes.io/name: api } }
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [api, api-candidate] }
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector:
             matchLabels: { kubernetes.io/metadata.name: ingress-nginx }
         - podSelector: { matchLabels: { app.kubernetes.io/name: ui } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: eval-job } }
       ports:
         - { protocol: TCP, port: 8000 }
 ---
-# 5. api egress: chroma, redis, Ollama on the host
+# 5. api & api-candidate egress: chroma, redis, Ollama on the host
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: { name: api-egress, namespace: rahbar }
 spec:
-  podSelector: { matchLabels: { app.kubernetes.io/name: api } }
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [api, api-candidate] }
   policyTypes: [Egress]
   egress:
     - to: [ { podSelector: { matchLabels: { app.kubernetes.io/name: chroma } } } ]
@@ -67,7 +72,7 @@ spec:
     - to: [ { ipBlock: { cidr: 0.0.0.0/0 } } ]
       ports: [ { protocol: TCP, port: 11434 } ]
 ---
-# 6. chroma: from api and indexer only
+# 6. chroma: from api, api-candidate, indexer, ingest, ingest-cron, and eval-job
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: { name: chroma-ingress, namespace: rahbar }
@@ -76,12 +81,13 @@ spec:
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: { matchLabels: { app.kubernetes.io/name: api } }
-        - podSelector: { matchLabels: { app.kubernetes.io/name: indexer } }
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/name, operator: In, values: [api, api-candidate, indexer, ingest, ingest-cron, eval-job] }
       ports:
         - { protocol: TCP, port: 8000 }
 ---
-# 7. redis: from api only
+# 7. redis: from api and api-candidate only
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: { name: redis-ingress, namespace: rahbar }
@@ -90,16 +96,20 @@ spec:
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: { matchLabels: { app.kubernetes.io/name: api } }
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/name, operator: In, values: [api, api-candidate] }
       ports:
         - { protocol: TCP, port: 6379 }
 ---
-# 8. indexer egress: chroma, Ollama on the host, and the public internet (fetch.py initContainer)
+# 8. indexer / ingest egress: chroma, Ollama on the host, and the public internet
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: { name: indexer-egress, namespace: rahbar }
 spec:
-  podSelector: { matchLabels: { app.kubernetes.io/name: indexer } }
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [indexer, ingest, ingest-cron] }
   policyTypes: [Egress]
   egress:
     - to: [ { podSelector: { matchLabels: { app.kubernetes.io/name: chroma } } } ]
@@ -113,3 +123,20 @@ spec:
       ports:
         - { protocol: TCP, port: 80 }
         - { protocol: TCP, port: 443 }
+---
+# 9. eval-job egress: api, api-candidate, chroma, and Ollama on the host
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: eval-egress, namespace: rahbar }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: eval-job } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/name, operator: In, values: [api, api-candidate, chroma] }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - to: [ { ipBlock: { cidr: 0.0.0.0/0 } } ]
+      ports: [ { protocol: TCP, port: 11434 } ]

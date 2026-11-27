@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gate-thresholds
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/part-of: rahbar
+    rahbar/role: release-gate
+data:
+  thresholds.yaml: |
+    # Release-gate thresholds (Part C2 / F2).
+    # Changing these values takes effect immediately — no image rebuild needed.
+    # recall5_max_drop: maximum allowed drop in recall@5 vs baseline (absolute)
+    recall5_max_drop: 0.02
+    # faithfulness_min: minimum faithfulness score (0–1)
+    faithfulness_min: 0.90
+    # p95_latency_max_ms: maximum p95 end-to-end latency in milliseconds
+    p95_latency_max_ms: 10000
+    # abstention_min: minimum abstention-correctness score (1.0 = perfect)
+    abstention_min: 1.0
