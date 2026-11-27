@@ -20,7 +20,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from statistics import mean, median, quantiles
+from statistics import mean
 
 DEFAULT_LOG = os.environ.get("TRACE_LOG_PATH", "/tmp/traces/traces.jsonl")
 
