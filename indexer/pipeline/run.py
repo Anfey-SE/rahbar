@@ -703,12 +703,52 @@ def run_ingest(
     return counts, str(verify_report_path), str(ingest_report_path)
 
 
+_FALLBACK_DATA_DIR = Path("/tmp/rahbar-data")
+
+
+def _is_dir_writable(path: Path) -> bool:
+    """Return True if path can be created and written to."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".write_probe"
+        probe.write_text("", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
+def _resolve_writable_data_dir(data_dir: Path) -> Path:
+    """Return data_dir if writable; otherwise fall back to /tmp/rahbar-data with a warning."""
+    if _is_dir_writable(data_dir):
+        return data_dir
+    if data_dir != _FALLBACK_DATA_DIR:
+        _log(
+            "WARNING: data-dir is not writable, falling back to /tmp/rahbar-data",
+            requested=str(data_dir),
+            fallback=str(_FALLBACK_DATA_DIR),
+        )
+        _FALLBACK_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        return _FALLBACK_DATA_DIR
+    return data_dir
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="RAHBAR ingestion CLI (Assignment 03).")
-    parser.add_argument("--input", required=True, help="Input directory containing documents")
-    parser.add_argument("--data-dir", required=True, help="Data directory for lake/quarantine/reports")
     parser.add_argument(
-        "--collection", default=None, help="Chroma collection name (overrides CHROMA_COLLECTION env var)"
+        "--input",
+        default=os.environ.get("CORPUS_DIR", "/corpus"),
+        help="Input directory containing documents (defaults to CORPUS_DIR env var)",
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=None,
+        help="Data directory for lake/quarantine/reports (defaults to DATA_DIR or /tmp/rahbar-data)",
+    )
+    parser.add_argument(
+        "--collection",
+        default=os.environ.get("CHROMA_COLLECTION"),
+        help="Chroma collection name (defaults to CHROMA_COLLECTION env var)",
     )
     parser.add_argument(
         "--prune", action="store_true", help="Delete chunks for documents missing from --input"
@@ -717,11 +757,6 @@ def main() -> int:
     args = parser.parse_args()
 
     input_dir = Path(args.input)
-    data_dir = Path(args.data_dir)
-
-    if not input_dir.is_dir():
-        print(f"ERROR: input directory does not exist: {input_dir}", file=sys.stderr)
-        return 1
 
     settings = get_settings()
     if args.collection:
@@ -741,6 +776,41 @@ def main() -> int:
             verify_near_dup_threshold=settings.verify_near_dup_threshold,
         )
 
+    if args.dummy:
+        _log(
+            "dummy ingestion starting",
+            collection=settings.collection,
+            embed_model=settings.embed_model,
+            chroma=f"{settings.chroma_host}:{settings.chroma_port}",
+            pod=os.environ.get("HOSTNAME", "-"),
+        )
+        try:
+            from .dummy import write_dummy_index
+            from .store import get_client
+
+            count = write_dummy_index(settings, get_client(settings))
+            _log("dummy indexer finished", chunks=count)
+            return 0
+        except Exception as exc:
+            _log("dummy ingestion failed", error=str(exc))
+            return 1
+
+    if not input_dir.is_dir():
+        print(f"ERROR: input directory does not exist: {input_dir}", file=sys.stderr)
+        return 1
+
+    if args.data_dir is not None:
+        data_dir = Path(args.data_dir)
+        if not _is_dir_writable(data_dir):
+            print(
+                f"ERROR: data directory is not writable: {data_dir}",
+                file=sys.stderr,
+            )
+            return 1
+    else:
+        default_data_dir = Path(os.environ.get("DATA_DIR") or str(_FALLBACK_DATA_DIR))
+        data_dir = _resolve_writable_data_dir(default_data_dir)
+
     _log(
         "ingestion starting",
         input=str(input_dir),
@@ -754,14 +824,6 @@ def main() -> int:
 
     started = time.perf_counter()
     try:
-        if args.dummy:
-            from .dummy import write_dummy_index
-            from .store import get_client
-
-            count = write_dummy_index(settings, get_client(settings))
-            _log("dummy indexer finished", chunks=count)
-            return 0
-
         counts, verify_path, ingest_path = run_ingest(
             input_dir, data_dir, settings, prune=args.prune
         )

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -672,3 +673,133 @@ def test_reports_written(tmp_path: Path, _patch_chroma: MockClient) -> None:
     assert "verification_report" in ir
     assert "collection" in ir
     assert "embed_model" in ir
+
+
+# ---------------------------------------------------------------------------
+# Tests: CLI backward compatibility & env var defaults
+# ---------------------------------------------------------------------------
+
+
+def test_cli_defaults_from_env(
+    tmp_path: Path,
+    _patch_chroma: MockClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Omitting --input, --data-dir, and --collection falls back to env vars."""
+    input_dir = _create_test_docs(tmp_path)
+    data_dir = tmp_path / "env_data"
+
+    monkeypatch.setenv("CORPUS_DIR", str(input_dir))
+    monkeypatch.setenv("DATA_DIR", str(data_dir))
+    monkeypatch.setenv("CHROMA_COLLECTION", "env-collection")
+    monkeypatch.setenv("EMBED_PROVIDER", "hash")
+    monkeypatch.setenv("EMBED_MODEL", "hash-768")
+    monkeypatch.setattr(sys, "argv", ["pipeline.run"])
+
+    rc = main()
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert "documents_seen=3" in out
+    assert "documents_passed=3" in out
+    assert "chunks_embedded=" in out
+    assert _patch_chroma.get_or_create_collection("env-collection").count() > 0
+
+
+def test_cli_explicit_unwritable_data_dir_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Explicitly passing an unwritable --data-dir fails with exit code 1 and no fallback."""
+    input_dir = _create_test_docs(tmp_path)
+    bad_dir = tmp_path / "readonly_data"
+
+    monkeypatch.setattr("pipeline.run._is_dir_writable", lambda path: False)
+    monkeypatch.setattr(
+        sys, "argv", ["pipeline.run", "--input", str(input_dir), "--data-dir", str(bad_dir)]
+    )
+
+    rc = main()
+    captured = capsys.readouterr()
+
+    assert rc == 1
+    assert "data directory is not writable" in captured.err
+    assert "falling back" not in captured.out
+
+
+def test_cli_default_unwritable_data_dir_falls_back(
+    tmp_path: Path,
+    _patch_chroma: MockClient,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """When --data-dir is omitted and DATA_DIR is unwritable, fall back to /tmp/rahbar-data with warning."""
+    from pipeline.run import _FALLBACK_DATA_DIR
+
+    input_dir = _create_test_docs(tmp_path)
+    bad_dir = tmp_path / "readonly_env_data"
+
+    monkeypatch.setenv("CORPUS_DIR", str(input_dir))
+    monkeypatch.setenv("DATA_DIR", str(bad_dir))
+    monkeypatch.setenv("CHROMA_COLLECTION", "fallback-col")
+    monkeypatch.setenv("EMBED_PROVIDER", "hash")
+    monkeypatch.setenv("EMBED_MODEL", "hash-768")
+    monkeypatch.setattr("pipeline.run._is_dir_writable", lambda path: path == _FALLBACK_DATA_DIR)
+    monkeypatch.setattr(sys, "argv", ["pipeline.run"])
+
+    rc = main()
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert "falling back to /tmp/rahbar-data" in out
+    assert "documents_seen=3" in out
+
+
+def test_cli_dummy_without_corpus_dir(
+    tmp_path: Path,
+    _patch_chroma: MockClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """--dummy succeeds even when CORPUS_DIR points to a non-existent directory."""
+    monkeypatch.setenv("CORPUS_DIR", str(tmp_path / "missing_corpus"))
+    monkeypatch.setenv("CHROMA_COLLECTION", "dummy-col")
+    monkeypatch.setattr(sys, "argv", ["pipeline.run", "--dummy"])
+    monkeypatch.setattr("pipeline.dummy.write_dummy_index", lambda settings, client: 3)
+
+    rc = main()
+    assert rc == 0
+
+
+def test_hash_embedder_ingestion_and_doc_vectors(
+    tmp_path: Path,
+    _patch_chroma: MockClient,
+) -> None:
+    """Hash embedder produces 768-dim chunk and document vectors and supports incremental runs."""
+    input_dir = _create_test_docs(tmp_path)
+    data_dir = tmp_path / "hash_data"
+    settings = IndexerSettings(
+        embed_model="hash-768",
+        chroma_host="localhost",
+        chroma_port=8000,
+        collection="hash-col",
+        corpus_dir=str(input_dir),
+        chunk_size=300,
+        chunk_overlap=50,
+        ollama_url="http://127.0.0.1:19999",
+        embed_provider="hash",
+    )
+
+    counts1, _, _ = run_ingest(input_dir, data_dir, settings)
+    assert counts1["documents_seen"] == 3
+    assert counts1["documents_passed"] == 3
+    assert counts1["chunks_embedded"] > 0
+
+    docs_col = _patch_chroma.get_or_create_collection("hash-col__docs")
+    assert len(docs_col._rows) == 3
+    assert all(len(row["embedding"]) == 768 for row in docs_col._rows.values())
+
+    counts2, _, _ = run_ingest(input_dir, data_dir, settings)
+    assert counts2["chunks_embedded"] == 0
+    assert counts2["chunks_skipped"] == counts1["chunks_embedded"]
