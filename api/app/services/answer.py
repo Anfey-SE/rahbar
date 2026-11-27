@@ -17,6 +17,7 @@ from ..routes.metrics import (
     RETRIEVAL_LATENCY,
 )
 from ..schemas import Answer, AskResponse, Citation, Passage, RetrievedRef
+from ..traces.record import RetrievedChunkTrace, TraceRecord
 from .cache import SemanticCache
 
 log = logging.getLogger("rahbar.answer")
@@ -125,19 +126,53 @@ def answer_question(
     provider: LLMProvider,
     settings: Settings,
 ) -> AskResponse:
+    t_total_start = time.perf_counter()
+
+    # D1: initialise the trace record for this query
+    trace = TraceRecord(
+        query=question,
+        embed_model=settings.embed_model,
+        collection=settings.collection,
+        model=settings.llm_model,
+        model_params={"temperature": settings.temperature},
+    )
+
     # 1. Semantic Cache check
     cache: SemanticCache | None = None
     if settings.llm_provider != "stub":
         cache = SemanticCache(settings)
+        t_cache_start = time.perf_counter()
         cached = cache.lookup(question)
+        trace.stage_latencies.cache_lookup_ms = (time.perf_counter() - t_cache_start) * 1000
         if cached is not None:
             cached.request_id = request_id_var.get()
+            # D1: emit trace for cache-hit path
+            trace.cache_hit = True
+            trace.response = cached.answer
+            trace.answered_from_context = cached.answered_from_context
+            trace.confidence = cached.confidence
+            trace.request_id = request_id_var.get()
+            trace.stage_latencies.total_ms = (time.perf_counter() - t_total_start) * 1000
+            trace.emit()
             return cached
 
     # 2. Retrieve passages
     t_ret_start = time.perf_counter()
     passages = retriever.retrieve(question, k=settings.top_k)
-    RETRIEVAL_LATENCY.observe(max(0.0, time.perf_counter() - t_ret_start))
+    retrieval_dt = time.perf_counter() - t_ret_start
+    RETRIEVAL_LATENCY.observe(max(0.0, retrieval_dt))
+    trace.stage_latencies.retrieval_ms = retrieval_dt * 1000
+
+    # D1: populate retrieved chunk traces
+    trace.retrieved = [
+        RetrievedChunkTrace(
+            chunk_id=p.chunk_id,
+            doc_id=p.source,
+            doc_version=getattr(p, "doc_version", "unknown"),
+            score=p.score,
+        )
+        for p in passages
+    ]
 
     # 3. Relevance floor check
     relevance_floor = getattr(settings, "relevance_floor", 0.64)
@@ -156,6 +191,19 @@ def answer_question(
                 "provider": provider.name,
             },
         )
+        # D4: guardrail — relevance floor abstention
+        detail = (
+            f"top score={passages[0].score:.3f} below floor={relevance_floor}"
+            if passages
+            else "no passages retrieved"
+        )
+        trace.add_guardrail("relevance_floor_abstention", detail=detail, triggered=True)
+        trace.answered_from_context = False
+        trace.abstention_reason = "below_relevance_floor"
+        trace.confidence = "low"
+        trace.request_id = request_id_var.get()
+        trace.stage_latencies.total_ms = (time.perf_counter() - t_total_start) * 1000
+        trace.emit()
         return AskResponse(
             request_id=request_id_var.get(),
             answer=_CANNOT_ANSWER_MSG,
@@ -175,6 +223,14 @@ def answer_question(
             provider=provider.name,
         )
 
+    # D1: build an approximate prompt for hashing (actual prompt built inside provider)
+    _prompt_text = (
+        "[SYSTEM] Answer using only the provided passages.\n\n[PASSAGES]\n"
+        + "\n---\n".join(f"{i+1}. {p.text}" for i, p in enumerate(valid_passages))
+        + f"\n\n[QUESTION]\n{question}"
+    )
+    trace.set_prompt(_prompt_text)
+
     # 4. Generate answer with one retry on failure
     t_gen_start = time.perf_counter()
     answer: Answer | None = None
@@ -189,7 +245,9 @@ def answer_question(
                 extra={"attempt": attempt, "error": str(exc)},
             )
 
-    GENERATION_LATENCY.observe(max(0.0, time.perf_counter() - t_gen_start))
+    gen_dt = time.perf_counter() - t_gen_start
+    GENERATION_LATENCY.observe(max(0.0, gen_dt))
+    trace.stage_latencies.generation_ms = gen_dt * 1000
 
     if answer is None:
         FALLBACKS.labels(reason="validation_failure").inc()
@@ -202,11 +260,15 @@ def answer_question(
             confidence="low",
         )
 
+    trace.response = answer.answer
+
     # 5. Citation verification
     valid_citations = _verify_citations(answer.citations, valid_passages)
     if len(valid_citations) < len(answer.citations):
         dropped_count = len(answer.citations) - len(valid_citations)
         log.warning("dropped invalid citations", extra={"dropped": dropped_count})
+
+    trace.citations = [c.model_dump() for c in valid_citations]
 
     log.info(
         "answer debug",
@@ -230,9 +292,31 @@ def answer_question(
         confidence = "low"
         is_abstention = True
         ABSTENTIONS.labels(reason="no_valid_citations").inc()
+        # D4: guardrail — honest abstention
+        trace.add_guardrail(
+            "honest_abstention",
+            detail="answered_from_context=True but no valid citations survived verification",
+            triggered=True,
+        )
     elif not answered_from_context:
         is_abstention = True
         ABSTENTIONS.labels(reason="model_abstention").inc()
+        # D4: guardrail — model declined to answer
+        trace.add_guardrail(
+            "model_abstention",
+            detail="model declined to answer from context",
+            triggered=True,
+        )
+
+    # D1: set trace outcome fields
+    trace.answered_from_context = answered_from_context
+    trace.confidence = confidence
+    if is_abstention:
+        trace.abstention_reason = (
+            "no_valid_citations"
+            if answer.answered_from_context and not valid_citations
+            else "model_abstention"
+        )
 
     res = AskResponse(
         request_id=request_id_var.get(),
@@ -268,5 +352,10 @@ def answer_question(
     # 7. Semantic cache storage
     if cache is not None and not is_abstention:
         cache.store(question, res)
+
+    # D1: emit trace at end of normal path
+    trace.request_id = request_id_var.get()
+    trace.stage_latencies.total_ms = (time.perf_counter() - t_total_start) * 1000
+    trace.emit()
 
     return res
