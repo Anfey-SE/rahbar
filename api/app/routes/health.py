@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from fastapi import APIRouter, Request, Response
@@ -123,6 +124,7 @@ def readyz(request: Request, response: Response) -> dict[str, Any]:
 
     return {
         "status": "ready",
+        "collection": settings.collection,
         "checks": {
             "chroma": "ok",
             "collection": "ok",
@@ -130,4 +132,25 @@ def readyz(request: Request, response: Response) -> dict[str, Any]:
             "embed_model": collection_embed_model,
             "redis": "ok",
         },
+    }
+
+
+@router.get("/info")
+def info(request: Request) -> dict[str, Any]:
+    """Read-only runtime configuration affecting evaluation numbers."""
+    settings = getattr(request.app.state, "settings", None)
+    if settings is None:
+        from ..config import get_settings
+
+        settings = get_settings()
+
+    return {
+        "embed_model": settings.embed_model,
+        "collection": settings.collection,
+        "relevance_floor": settings.relevance_floor,
+        "top_k": settings.top_k,
+        "temperature": settings.temperature,
+        "llm_model": settings.llm_model,
+        "chunk_size": int(os.environ.get("CHUNK_SIZE", 600)),
+        "chunk_overlap": int(os.environ.get("CHUNK_OVERLAP", 100)),
     }
